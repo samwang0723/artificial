@@ -1,5 +1,5 @@
-use futures_util::stream::StreamExt; // for stream.next()
-use reqwest::{Client, Response};
+use futures::StreamExt;
+use once_cell::sync::Lazy;
 use reqwest_eventsource::{Event, EventSource};
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -8,10 +8,17 @@ use std::time::Duration;
 
 static MODEL: &str = "gpt-4-1106-preview";
 static MAX_TOKENS: i32 = 1024 * 4;
-static PROMPT: &str = r#"#1 You are a professional Rust lang AI assistant can parse user input and answer technicial questions based on context given. You need to make sure all the code MUST wrapped inside
+static PROMPT: &str = r#"#1 You are a professional Rust lang AI assistant can 
+answer technicial questions based on context given. You need to make sure all 
+the code MUST wrapped inside
 ```(code-language)
 (code)
 ```"#;
+static CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
+    reqwest::Client::builder()
+        .build()
+        .expect("Failed to create Client")
+});
 
 #[derive(Debug, Serialize)]
 struct Message {
@@ -29,13 +36,6 @@ struct MessagesWrapper {
     frequency_penalty: usize,
     presence_penalty: usize,
     messages: Vec<Message>,
-}
-
-impl MessagesWrapper {
-    // Define a method to convert the struct into a JSON string
-    pub fn to_json(&self) -> Result<String, serde_json::Error> {
-        serde_json::to_string(&self)
-    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -60,12 +60,7 @@ struct Delta {
     content: Option<String>,
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    dotenv::dotenv().ok();
-    tracing_subscriber::fmt::init();
-
-    let client = Client::new();
+fn build_request() -> reqwest::RequestBuilder {
     let api_key = std::env::var("OPENAI_API_KEY").unwrap();
     let messages = MessagesWrapper {
         stream: true,
@@ -88,41 +83,66 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let json_payload = json!(&messages);
 
-    let response = client
+    CLIENT
         .post("https://api.openai.com/v1/chat/completions")
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
         .timeout(Duration::from_secs(60 * 10))
-        .json(&json_payload);
+        .json(&json_payload)
+}
 
-    let mut es = EventSource::new(response).expect("Failed to create EventSource");
-    while let Some(event) = es.next().await {
-        match event {
-            Ok(Event::Open) => println!("Connection Open!"),
-            Ok(Event::Message(message)) => {
-                // Parse the inner JSON string in the `data` field into the EventData struct
-                let event_data: EventData = serde_json::from_str(&message.data).unwrap();
-                let choice = &event_data.choices[0];
-                match choice.finish_reason.as_ref() {
-                    Some(reason) => {
-                        if *reason == "stop".to_string() {
-                            println!("");
-                            es.close();
+async fn receive(mut rx: tokio::sync::mpsc::UnboundedReceiver<String>) {
+    while let Some(message) = rx.recv().await {
+        print!("{}", message);
+    }
+}
+
+#[tokio::main]
+async fn main() {
+    dotenv::dotenv().ok();
+    tracing_subscriber::fmt::init();
+
+    // Create a channel for sending messages to SSE clients
+    let (tx, rx) = tokio::sync::mpsc::unbounded_channel::<String>();
+
+    // Spawn a task to handle OpenAI responses
+    let fetch_handle = tokio::spawn(async move {
+        let mut es = EventSource::new(build_request()).expect("Failed to create EventSource");
+        let tx_clone = tx.clone();
+        while let Some(event) = es.next().await {
+            match event {
+                Ok(Event::Open) => println!("Connection Open!"),
+                Ok(Event::Message(message)) => {
+                    // Parse the inner JSON string in the `data` field into the EventData struct
+                    let event_data: EventData = serde_json::from_str(&message.data).unwrap();
+                    let choice = &event_data.choices[0];
+                    match choice.finish_reason.as_ref() {
+                        Some(reason) => {
+                            if *reason == "stop".to_string() {
+                                es.close();
+                                drop(tx_clone);
+                                break;
+                            }
                         }
-                        break;
+                        None => match &choice.delta.content {
+                            Some(body) => {
+                                // Send the body to SSE clients
+                                let _ = tx_clone.send(body.clone());
+                            }
+                            None => (),
+                        },
                     }
-                    None => match &choice.delta.content {
-                        Some(body) => print!("{}", body),
-                        None => (),
-                    },
+                }
+                Err(err) => {
+                    println!("Error: {}", err);
+                    es.close();
                 }
             }
-            Err(err) => {
-                println!("Error: {}", err);
-                es.close();
-            }
         }
-    }
+    });
 
-    Ok(())
+    let receive_handle = tokio::spawn(receive(rx));
+
+    // Await on both handles to ensure completion
+    let _results = tokio::try_join!(fetch_handle, receive_handle);
 }
