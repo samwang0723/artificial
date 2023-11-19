@@ -33,9 +33,11 @@ pub async fn initialize() {
 }
 
 async fn openai_trigger(mut rx: mpsc::UnboundedReceiver<(Sse, String)>) {
-    while let Some((sse, message)) = rx.recv().await {
-        let _ = openai_send(sse, message.clone()).await;
-    }
+    tokio::spawn(async move {
+        while let Some((sse, message)) = rx.recv().await {
+            let _ = openai_send(sse, message.clone()).await;
+        }
+    });
 }
 
 async fn openai_send(sse: Sse, msg: String) -> Result<(), Box<dyn std::error::Error>> {

@@ -15,6 +15,7 @@ async fn main() {
     dotenv::dotenv().ok();
     tracing_subscriber::fmt::init();
 
+    //TODO: should have user session and isolate the tx
     let sse = create_sse();
     let log = warp::log("any");
     initialize().await;

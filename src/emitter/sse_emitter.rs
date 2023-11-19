@@ -47,9 +47,7 @@ pub fn with_sse(
 }
 
 pub async fn publish(sse: Sse, message: Message) {
-    tokio::spawn(async move {
-        sse.lock()
-            .await
-            .retain(|tx| tx.send(message.clone()).is_ok());
-    });
+    sse.lock()
+        .await
+        .retain(|tx| tx.send(message.clone()).is_ok());
 }
