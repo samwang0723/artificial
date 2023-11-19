@@ -3,7 +3,7 @@ use serde::Serialize;
 /// Message variants.
 #[derive(Serialize, Debug, Clone)]
 pub enum Message {
-    Connected,
+    Connected(String),
     Reply(String),
 }
 

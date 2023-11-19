@@ -2,12 +2,13 @@ use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct OpenAiRequest {
+    pub uuid: String,
     pub message: String,
 }
 
 impl OpenAiRequest {
-    pub fn new(message: String) -> Self {
-        OpenAiRequest { message }
+    pub fn new(uuid: String, message: String) -> Self {
+        OpenAiRequest { uuid, message }
     }
 }
 

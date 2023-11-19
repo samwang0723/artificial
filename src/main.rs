@@ -84,13 +84,13 @@ static INDEX_HTML: &str = r#"
         sse.onopen = function() {
             chat.innerHTML = "<p><em>Connected!</em></p>";
         }
-        var user_id;
+        var user_uuid;
         sse.addEventListener("user", function(msg) {
-            console.log('user: ' + msg.data);
             message(msg.data);
         });
         sse.addEventListener("system", function(msg) {
             console.log('system: ' + msg.data);
+            user_uuid = msg.data;
         });
 
         send.onclick = function() {
@@ -99,6 +99,7 @@ static INDEX_HTML: &str = r#"
             xhr.open("POST", 'http://' + location.host + '/api/v1/send', true);
             xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
             var data = {
+              uuid: user_uuid,
               message: msg,
             };
             var jsonStr = JSON.stringify(data);

@@ -11,14 +11,14 @@ use crate::api::sse::Message;
 use crate::emitter::sse_emitter::{publish, Sse};
 use crate::vendor::openai::{MessageAction, OpenAI};
 
-type OpenAIChan = Lazy<Mutex<Option<mpsc::UnboundedSender<(Sse, String)>>>>;
+type OpenAIChan = Lazy<Mutex<Option<mpsc::UnboundedSender<(Sse, String, String)>>>>;
 
 static API_CLIENT: Lazy<OpenAI> = Lazy::new(OpenAI::default);
 static OPENAI_CHANNEL: OpenAIChan = Lazy::new(|| Mutex::new(None));
 
 pub async fn send(request: OpenAiRequest, sse: Sse) -> Result<impl warp::Reply, warp::Rejection> {
     if let Some(openai_tx) = OPENAI_CHANNEL.lock().unwrap().as_ref() {
-        let _ = openai_tx.send((sse, request.into()));
+        let _ = openai_tx.send((sse, request.uuid.clone(), request.into()));
     }
 
     Ok(with_status(warp::reply(), StatusCode::OK))
@@ -32,15 +32,19 @@ pub async fn initialize() {
     });
 }
 
-async fn openai_trigger(mut rx: mpsc::UnboundedReceiver<(Sse, String)>) {
-    tokio::spawn(async move {
-        while let Some((sse, message)) = rx.recv().await {
-            let _ = openai_send(sse, message.clone()).await;
-        }
-    });
+async fn openai_trigger(mut rx: mpsc::UnboundedReceiver<(Sse, String, String)>) {
+    while let Some((sse, uuid, message)) = rx.recv().await {
+        tokio::spawn(async move {
+            let _ = openai_send(sse, uuid, message.clone()).await;
+        });
+    }
 }
 
-async fn openai_send(sse: Sse, msg: String) -> Result<(), Box<dyn std::error::Error>> {
+async fn openai_send(
+    sse: Sse,
+    uuid: String,
+    msg: String,
+) -> Result<(), Box<dyn std::error::Error>> {
     let request = API_CLIENT.create_request(msg);
     let mut es = EventSource::new(request).expect("Failed to create EventSource");
     while let Some(event) = es.next().await {
@@ -48,7 +52,7 @@ async fn openai_send(sse: Sse, msg: String) -> Result<(), Box<dyn std::error::Er
             Ok(Event::Open) => println!("Connection Open!"),
             Ok(Event::Message(message)) => match API_CLIENT.process(&message.data) {
                 Ok(MessageAction::SendBody(body)) => {
-                    publish(sse.clone(), Message::Reply(body.clone())).await;
+                    publish(sse.clone(), uuid.clone(), Message::Reply(body.clone())).await;
                 }
                 Ok(MessageAction::Stop) => es.close(),
                 Ok(MessageAction::NoAction) => (),

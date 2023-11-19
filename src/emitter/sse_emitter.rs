@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
@@ -9,21 +10,23 @@ use crate::api::sse::Message;
 pub type Sse = Arc<Mutex<SseEmitter>>;
 
 pub struct SseEmitter {
-    inner: Vec<mpsc::UnboundedSender<Message>>,
+    inner: HashMap<String, mpsc::UnboundedSender<Message>>,
 }
 
 impl SseEmitter {
     pub fn new() -> Self {
-        SseEmitter { inner: Vec::new() }
+        SseEmitter {
+            inner: HashMap::new(),
+        }
     }
 
-    pub fn insert(&mut self, tx: mpsc::UnboundedSender<Message>) {
-        self.inner.push(tx);
+    pub fn insert(&mut self, uuid: String, tx: mpsc::UnboundedSender<Message>) {
+        self.inner.insert(uuid, tx);
     }
 }
 
 impl Deref for SseEmitter {
-    type Target = Vec<mpsc::UnboundedSender<Message>>;
+    type Target = HashMap<String, mpsc::UnboundedSender<Message>>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
@@ -46,8 +49,8 @@ pub fn with_sse(
     warp::any().map(move || sse.clone())
 }
 
-pub async fn publish(sse: Sse, message: Message) {
-    sse.lock()
-        .await
-        .retain(|tx| tx.send(message.clone()).is_ok());
+pub async fn publish(sse: Sse, uuid: String, message: Message) {
+    let sse = sse.lock().await;
+    let tx = sse.get(&uuid).unwrap();
+    tx.send(message.clone()).unwrap();
 }
