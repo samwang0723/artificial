@@ -7,6 +7,11 @@ pub enum Message {
     Reply(String),
 }
 
+#[derive(Debug, Serialize)]
+pub struct MessageEvent {
+    pub message: String,
+}
+
 #[macro_export]
 macro_rules! sse {
     ($sse:expr) => {

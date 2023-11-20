@@ -15,101 +15,22 @@ async fn main() {
     dotenv::dotenv().ok();
     tracing_subscriber::fmt::init();
 
-    //TODO: should have user session and isolate the tx
     let sse = create_sse();
     let log = warp::log("any");
     initialize().await;
 
-    // GET / -> index html
-    let index = warp::path::end().map(|| {
-        warp::http::Response::builder()
-            .header("content-type", "text/html; charset=utf-8")
-            .body(INDEX_HTML)
-    });
+    // Set up CORS
+    let cors = warp::cors()
+        .allow_any_origin()
+        .allow_methods(vec!["GET", "POST", "DELETE", "OPTIONS"])
+        .allow_headers(vec!["Content-Type", "Authorization"]);
 
-    let api = index.or(send!(sse.clone())).or(sse!(sse));
-    let api = api.with(log);
+    // Define the directory to serve static files from.
+    let static_files_dir = "static/";
+    let static_files = warp::fs::dir(static_files_dir);
+
+    let api = static_files.or(send!(sse.clone())).or(sse!(sse));
+    let api = api.with(cors).with(log);
+
     warp::serve(api).run(([127, 0, 0, 1], 3000)).await;
 }
-
-static INDEX_HTML: &str = r#"
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Warp Chat</title>
-    </head>
-    <body>
-        <h1>warp chat</h1>
-        <div id="chat">
-            <p><em>Connecting...</em></p>
-        </div>
-        <input type="text" id="text" />
-        <button type="button" id="send">Send</button>
-        <style>
-        .message-body {
-            text-align: left;
-            width: 70%;
-            flex-direction: row;
-            flex-wrap: wrap;
-            word-wrap: break-word;
-            margin: 10px;
-        }
-        </style>
-        <script type="text/javascript">
-        let activeDiv = null;
-        let currentMsg = "";
-        var uri = 'http://' + location.host + '/api/v1/sse';
-        var sse = new EventSource(uri);
-        function message(data) {
-            if (activeDiv) {
-                currentMsg += ' ' + data;
-                activeDiv.innerHTML = currentMsg;
-            } else {
-                var line = document.createElement('span');
-                line.classList.add("message-body");
-                currentMsg = '&lt;ChatGPT&gt;: ' + data;
-                line.innerHTML = currentMsg;
-                chat.appendChild(line);
-                activeDiv = line;
-                var separator = document.createElement('p');
-                chat.appendChild(separator);
-            }
-        }
-        function message_self(data) {
-            var line = document.createElement('p');
-            line.innerText = data;
-            chat.appendChild(line);
-        }
-
-        sse.onopen = function() {
-            chat.innerHTML = "<p><em>Connected!</em></p>";
-        }
-        var user_uuid;
-        sse.addEventListener("user", function(msg) {
-            message(msg.data);
-        });
-        sse.addEventListener("system", function(msg) {
-            console.log('system: ' + msg.data);
-            user_uuid = msg.data;
-        });
-
-        send.onclick = function() {
-            var msg = text.value;
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", 'http://' + location.host + '/api/v1/send', true);
-            xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
-            var data = {
-              uuid: user_uuid,
-              message: msg,
-            };
-            var jsonStr = JSON.stringify(data);
-            xhr.send(jsonStr);
-            text.value = '';
-            message_self('<You>: ' + msg);
-            activeDiv = null;
-            currentMsg = "";
-        };
-        </script>
-    </body>
-</html>
-"#;

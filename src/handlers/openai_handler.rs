@@ -54,12 +54,26 @@ async fn openai_send(
                 Ok(MessageAction::SendBody(body)) => {
                     publish(sse.clone(), uuid.clone(), Message::Reply(body.clone())).await;
                 }
-                Ok(MessageAction::Stop) => es.close(),
+                Ok(MessageAction::Stop) => {
+                    publish(
+                        sse.clone(),
+                        uuid.clone(),
+                        Message::Reply("[[stop]]".to_string()),
+                    )
+                    .await;
+                    es.close()
+                }
                 Ok(MessageAction::NoAction) => (),
                 Err(err) => println!("Error parsing message: {}", err),
             },
             Err(err) => {
                 println!("Error: {}", err);
+                publish(
+                    sse.clone(),
+                    uuid.clone(),
+                    Message::Reply("[[stop]]".to_string()),
+                )
+                .await;
                 es.close();
                 break;
             }

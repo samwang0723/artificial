@@ -12,7 +12,10 @@ step and being very clear & precise on the problems and solutions.
 You need to make sure all the code MUST wrapped inside
 ```(code-language)
 (code)
-```"#;
+```
+#2 Did the answer meet the assignment? 
+#3 Review your answer and find problems within
+#4 Based on the problems you found, improve your answer"#;
 static API_KEY: Lazy<String> = Lazy::new(|| std::env::var("OPENAI_API_KEY").unwrap());
 
 #[derive(Debug, Serialize)]

@@ -4,7 +4,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use uuid::Uuid;
 use warp::sse::Event;
 
-use crate::api::sse::Message;
+use crate::api::sse::{Message, MessageEvent};
 use crate::emitter::sse_emitter::Sse;
 
 pub async fn connect(sse: Sse) -> Result<impl warp::Reply, warp::Rejection> {
@@ -22,9 +22,13 @@ async fn stream(sse: Sse) -> impl Stream<Item = Result<Event, warp::Error>> + Se
     let mut sse = sse.lock().await;
     sse.insert(uuid, tx);
 
-    //TODO: response with json_data
     rx.map(|msg| match msg {
         Message::Connected(uuid) => Ok(Event::default().event("system").data(uuid)),
-        Message::Reply(text) => Ok(Event::default().event("user").data(text)),
+        Message::Reply(text) => {
+            let event = MessageEvent {
+                message: text.clone(),
+            };
+            Ok(Event::default().event("user").json_data(event).unwrap())
+        }
     })
 }
