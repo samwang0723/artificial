@@ -27,6 +27,7 @@ $(document).ready(function () {
   sse.addEventListener('user', function (msg) {
     var obj = JSON.parse(msg.data);
     var data = obj.message;
+
     // If the message is "[[stop]]", reset the activeDiv
     if (data === '[[stop]]') {
       formatMessage(currentMsg, true);
@@ -34,6 +35,8 @@ $(document).ready(function () {
       activeDiv = null;
       currentMsg = '';
       stopLoading();
+      return;
+    } else if (data === '') {
       return;
     }
 
