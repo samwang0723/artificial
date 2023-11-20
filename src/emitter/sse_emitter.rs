@@ -20,8 +20,8 @@ impl SseEmitter {
         }
     }
 
-    pub fn insert(&mut self, uuid: String, tx: mpsc::UnboundedSender<Message>) {
-        self.inner.insert(uuid, tx);
+    pub fn insert(&mut self, uuid: Arc<String>, tx: mpsc::UnboundedSender<Message>) {
+        self.inner.insert(uuid.as_str().to_owned(), tx);
     }
 }
 
@@ -49,8 +49,8 @@ pub fn with_sse(
     warp::any().map(move || sse.clone())
 }
 
-pub async fn publish(sse: Sse, uuid: String, message: Message) {
+pub async fn publish(sse: Sse, uuid: Arc<String>, message: Message) {
     let sse = sse.lock().await;
-    let tx = sse.get(&uuid).unwrap();
+    let tx = sse.get(uuid.as_str()).unwrap();
     tx.send(message.clone()).unwrap();
 }

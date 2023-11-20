@@ -1,6 +1,7 @@
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::sync::Arc;
 use std::time::Duration;
 
 static MODEL: &str = "gpt-4-1106-preview";
@@ -53,7 +54,7 @@ struct Delta {
 }
 
 pub enum MessageAction {
-    SendBody(String),
+    SendBody(Arc<String>),
     Stop,
     NoAction,
 }
@@ -121,7 +122,10 @@ impl OpenAI<'_> {
         match &choice.finish_reason {
             Some(reason) if reason.as_str() == STOP_SIGN => Ok(MessageAction::Stop),
             None => match &choice.delta.content {
-                Some(body) => Ok(MessageAction::SendBody(body.clone())),
+                Some(body) => {
+                    let body = Arc::new(body.to_string());
+                    Ok(MessageAction::SendBody(body))
+                }
                 None => Ok(MessageAction::NoAction),
             },
             _ => Ok(MessageAction::NoAction),
