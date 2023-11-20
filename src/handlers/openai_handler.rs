@@ -8,26 +8,24 @@ use warp::http::StatusCode;
 use warp::reply::with_status;
 
 use crate::api::openai::OpenAiRequest;
+use crate::api::openai::OpenAiRequestIntermediate;
 use crate::api::sse::Message;
 use crate::emitter::sse_emitter::{publish, Sse};
 use crate::vendor::openai::{MessageAction, OpenAI};
 
-extern crate lazy_static;
-
-type OpenAIChan = Lazy<Mutex<Option<mpsc::UnboundedSender<(Sse, Arc<String>, Arc<String>)>>>>;
+type OpenAIChan = Lazy<Mutex<Option<mpsc::UnboundedSender<(Sse, OpenAiRequest)>>>>;
 
 static API_CLIENT: Lazy<OpenAI> = Lazy::new(OpenAI::default);
 static OPENAI_CHANNEL: OpenAIChan = Lazy::new(|| Mutex::new(None));
-lazy_static! {
-    static ref STOP_SIGN: Arc<String> = Arc::new(String::from("[[stop]]"));
-}
+static STOP_SIGN: Lazy<Arc<String>> = Lazy::new(|| Arc::new(String::from("[[stop]]")));
 
-pub async fn send(request: OpenAiRequest, sse: Sse) -> Result<impl warp::Reply, warp::Rejection> {
+pub async fn send(
+    request: OpenAiRequestIntermediate,
+    sse: Sse,
+) -> Result<impl warp::Reply, warp::Rejection> {
     if let Some(openai_tx) = OPENAI_CHANNEL.lock().unwrap().as_ref() {
-        let uuid = Arc::new(request.uuid);
-        let message = Arc::new(request.message);
-
-        let _ = openai_tx.send((sse, uuid, message));
+        let request: OpenAiRequest = request.into();
+        let _ = openai_tx.send((sse, request));
     }
 
     Ok(with_status(warp::reply(), StatusCode::OK))
@@ -41,30 +39,28 @@ pub async fn initialize() {
     });
 }
 
-async fn openai_trigger(mut rx: mpsc::UnboundedReceiver<(Sse, Arc<String>, Arc<String>)>) {
-    while let Some((sse, uuid, message)) = rx.recv().await {
+async fn openai_trigger(mut rx: mpsc::UnboundedReceiver<(Sse, OpenAiRequest)>) {
+    while let Some((sse, request)) = rx.recv().await {
         tokio::spawn(async move {
-            let _ = openai_send(sse, uuid, message.clone()).await;
+            let _ = openai_send(sse, request).await;
         });
     }
 }
 
-async fn openai_send(
-    sse: Sse,
-    uuid: Arc<String>,
-    msg: Arc<String>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let request = API_CLIENT.create_request(msg.as_str().to_owned());
-    let mut es = EventSource::new(request).expect("Failed to create EventSource");
+async fn openai_send(sse: Sse, request: OpenAiRequest) -> Result<(), Box<dyn std::error::Error>> {
+    let openai_request = API_CLIENT.create_request(request.message);
+    let mut es = EventSource::new(openai_request).expect("Failed to create EventSource");
     while let Some(event) = es.next().await {
+        let uuid = request.uuid.clone();
+        let stop_sign = STOP_SIGN.clone();
         match event {
             Ok(Event::Open) => println!("Connection Open!"),
             Ok(Event::Message(message)) => match API_CLIENT.process(&message.data) {
                 Ok(MessageAction::SendBody(body)) => {
-                    publish(sse.clone(), uuid.clone(), Message::Reply(body)).await;
+                    publish(sse.clone(), uuid, Message::Reply(body)).await;
                 }
                 Ok(MessageAction::Stop) => {
-                    publish(sse.clone(), uuid.clone(), Message::Reply(STOP_SIGN.clone())).await;
+                    publish(sse.clone(), uuid, Message::Reply(stop_sign)).await;
                     es.close()
                 }
                 Ok(MessageAction::NoAction) => (),
@@ -72,9 +68,9 @@ async fn openai_send(
             },
             Err(err) => {
                 println!("Error: {}", err);
-                publish(sse.clone(), uuid.clone(), Message::Reply(STOP_SIGN.clone())).await;
+                publish(sse.clone(), uuid, Message::Reply(stop_sign)).await;
                 es.close();
-                break;
+                return Err(Box::new(err));
             }
         }
     }

@@ -20,21 +20,21 @@ You need to make sure all the code MUST wrapped inside
 static API_KEY: Lazy<String> = Lazy::new(|| std::env::var("OPENAI_API_KEY").unwrap());
 
 #[derive(Debug, Serialize)]
-struct Message {
-    role: String,
-    content: String,
+struct Message<'a> {
+    role: &'a str,
+    content: &'a str,
 }
 
 #[derive(Debug, Serialize)]
-struct MessagesWrapper {
+struct MessagesWrapper<'a> {
     stream: bool,
     temperature: f32,
     max_tokens: i32,
-    model: String,
+    model: &'a str,
     top_p: f32,
     frequency_penalty: usize,
     presence_penalty: usize,
-    messages: Vec<Message>,
+    messages: Vec<Message<'a>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -82,23 +82,23 @@ impl<'a> Default for OpenAI<'a> {
 }
 
 impl OpenAI<'_> {
-    fn payload(&self, msg: String, _context: Option<String>) -> serde_json::Value {
+    fn payload(&self, msg: Arc<String>, _context: Option<String>) -> serde_json::Value {
         let messages = MessagesWrapper {
             stream: self.stream_enabled,
             temperature: 0.0,
             max_tokens: MAX_TOKENS,
-            model: self.model.to_string(),
+            model: self.model,
             top_p: 0.1,
             frequency_penalty: 0,
             presence_penalty: 0,
             messages: vec![
                 Message {
-                    role: "system".to_string(),
-                    content: PROMPT.to_string(),
+                    role: "system",
+                    content: PROMPT,
                 },
                 Message {
-                    role: "user".to_string(),
-                    content: msg,
+                    role: "user",
+                    content: msg.as_str(),
                 },
             ],
         };
@@ -106,7 +106,7 @@ impl OpenAI<'_> {
         json!(&messages)
     }
 
-    pub fn create_request(&self, msg: String) -> reqwest::RequestBuilder {
+    pub fn create_request(&self, msg: Arc<String>) -> reqwest::RequestBuilder {
         let json_payload = self.payload(msg, None);
         self.client
             .post("https://api.openai.com/v1/chat/completions")

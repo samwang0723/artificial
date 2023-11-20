@@ -1,20 +1,24 @@
 use serde::Deserialize;
+use std::sync::Arc;
 
 #[derive(Deserialize)]
-pub struct OpenAiRequest {
+pub struct OpenAiRequestIntermediate {
     pub uuid: String,
     pub message: String,
 }
 
-impl OpenAiRequest {
-    pub fn new(uuid: String, message: String) -> Self {
-        OpenAiRequest { uuid, message }
-    }
+#[derive(Debug)]
+pub struct OpenAiRequest {
+    pub uuid: Arc<String>,
+    pub message: Arc<String>,
 }
 
-impl From<OpenAiRequest> for String {
-    fn from(ur: OpenAiRequest) -> Self {
-        ur.message
+impl From<OpenAiRequestIntermediate> for OpenAiRequest {
+    fn from(intermediate: OpenAiRequestIntermediate) -> Self {
+        OpenAiRequest {
+            uuid: Arc::new(intermediate.uuid),
+            message: Arc::new(intermediate.message),
+        }
     }
 }
 

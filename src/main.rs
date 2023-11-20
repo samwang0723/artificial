@@ -2,8 +2,6 @@ use emitter::sse_emitter::create_sse;
 use emitter::sse_emitter::with_sse;
 use warp::Filter;
 
-#[macro_use]
-extern crate lazy_static;
 use crate::handlers::openai_handler::initialize;
 
 mod api;
