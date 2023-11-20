@@ -30,13 +30,13 @@ $(document).ready(function () {
 
     // If the message is "[[stop]]", reset the activeDiv
     if (data === '[[stop]]') {
-      formatMessage(currentMsg, true);
+      if (currentMsg !== '') {
+        formatMessage(currentMsg, true);
+      }
 
       activeDiv = null;
       currentMsg = '';
       stopLoading();
-      return;
-    } else if (data === '') {
       return;
     }
 
