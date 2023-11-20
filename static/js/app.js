@@ -6,7 +6,8 @@ let currentMsg = '';
 let refreshBottom = true;
 
 $(document).ready(function () {
-  var uri = 'http://' + location.host + '/api/v1/sse';
+  var origin = window.location.origin;
+  var uri = origin + '/api/v1/sse';
   var sse = new EventSource(uri);
   var user_uuid;
 
@@ -61,7 +62,7 @@ $(document).ready(function () {
     formatMessage(message, true);
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://' + location.host + '/api/v1/send', true);
+    xhr.open('POST', origin + '/api/v1/send', true);
     xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
     var data = {
       uuid: user_uuid,
