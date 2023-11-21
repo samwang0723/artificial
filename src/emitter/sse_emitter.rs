@@ -51,6 +51,8 @@ pub fn with_sse(
 
 pub async fn publish(sse: Sse, uuid: Arc<String>, message: Message) {
     let sse = sse.lock().await;
-    let tx = sse.get(uuid.as_str()).unwrap();
-    tx.send(message.clone()).unwrap();
+    match sse.get(uuid.as_str()) {
+        Some(tx) => tx.send(message.clone()).unwrap(),
+        None => println!("No tx found for {}", uuid),
+    }
 }
