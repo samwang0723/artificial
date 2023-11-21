@@ -10,10 +10,11 @@ use warp::reply::with_status;
 use crate::api::openai::OpenAiRequest;
 use crate::api::openai::OpenAiRequestIntermediate;
 use crate::api::sse::Message;
+use crate::emitter::memory_emitter::{get_memory, record, Memory};
 use crate::emitter::sse_emitter::{publish, Sse};
 use crate::vendor::openai::{MessageAction, OpenAI};
 
-type OpenAIChan = Lazy<Mutex<Option<mpsc::UnboundedSender<(Sse, OpenAiRequest)>>>>;
+type OpenAIChan = Lazy<Mutex<Option<mpsc::UnboundedSender<(Sse, Memory, OpenAiRequest)>>>>;
 
 static API_CLIENT: Lazy<OpenAI> = Lazy::new(OpenAI::default);
 static OPENAI_CHANNEL: OpenAIChan = Lazy::new(|| Mutex::new(None));
@@ -22,10 +23,11 @@ static STOP_SIGN: Lazy<Arc<String>> = Lazy::new(|| Arc::new(String::from("[[stop
 pub async fn send(
     request: OpenAiRequestIntermediate,
     sse: Sse,
+    mem: Memory,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     if let Some(openai_tx) = OPENAI_CHANNEL.lock().unwrap().as_ref() {
         let request: OpenAiRequest = request.into();
-        let _ = openai_tx.send((sse, request));
+        let _ = openai_tx.send((sse, mem, request));
     }
 
     Ok(with_status(warp::reply(), StatusCode::OK))
@@ -39,28 +41,39 @@ pub async fn initialize() {
     });
 }
 
-async fn openai_trigger(mut rx: mpsc::UnboundedReceiver<(Sse, OpenAiRequest)>) {
-    while let Some((sse, request)) = rx.recv().await {
+async fn openai_trigger(mut rx: mpsc::UnboundedReceiver<(Sse, Memory, OpenAiRequest)>) {
+    while let Some((sse, mem, request)) = rx.recv().await {
         tokio::spawn(async move {
-            let _ = openai_send(sse, request).await;
+            let _ = openai_send(sse, mem, request).await;
         });
     }
 }
 
-async fn openai_send(sse: Sse, request: OpenAiRequest) -> Result<(), Box<dyn std::error::Error>> {
-    let openai_request = API_CLIENT.create_request(request.message);
+async fn openai_send(
+    sse: Sse,
+    mem: Memory,
+    request: OpenAiRequest,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let memory = get_memory(mem.clone(), request.uuid.clone()).await;
+    let openai_request = API_CLIENT.create_request(request.message, Some(memory));
     let mut es = EventSource::new(openai_request).expect("Failed to create EventSource");
     while let Some(event) = es.next().await {
-        let uuid = request.uuid.clone();
-        let stop_sign = STOP_SIGN.clone();
         match event {
             Ok(Event::Open) => println!("Connection Open!"),
             Ok(Event::Message(message)) => match API_CLIENT.process(&message.data) {
                 Ok(MessageAction::SendBody(body)) => {
-                    publish(sse.clone(), uuid, Message::Reply(body)).await;
+                    let b_clone = body.clone();
+                    publish(sse.clone(), request.uuid.clone(), Message::Reply(b_clone)).await;
+                    record(mem.clone(), request.uuid.clone(), body).await;
                 }
                 Ok(MessageAction::Stop) => {
-                    publish(sse.clone(), uuid, Message::Reply(stop_sign)).await;
+                    publish(
+                        sse.clone(),
+                        request.uuid.clone(),
+                        Message::Reply(STOP_SIGN.clone()),
+                    )
+                    .await;
+                    record(mem.clone(), request.uuid.clone(), STOP_SIGN.clone()).await;
                     es.close()
                 }
                 Ok(MessageAction::NoAction) => (),
@@ -68,7 +81,13 @@ async fn openai_send(sse: Sse, request: OpenAiRequest) -> Result<(), Box<dyn std
             },
             Err(err) => {
                 println!("Error: {}", err);
-                publish(sse.clone(), uuid, Message::Reply(stop_sign)).await;
+                publish(
+                    sse.clone(),
+                    request.uuid.clone(),
+                    Message::Reply(STOP_SIGN.clone()),
+                )
+                .await;
+                record(mem.clone(), request.uuid.clone(), STOP_SIGN.clone()).await;
                 es.close();
                 return Err(Box::new(err));
             }

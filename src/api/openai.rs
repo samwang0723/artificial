@@ -24,9 +24,10 @@ impl From<OpenAiRequestIntermediate> for OpenAiRequest {
 
 #[macro_export]
 macro_rules! send {
-    ($sse:expr) => {
+    ($sse:expr, $mem:expr) => {
         self::routes::openai_route::send()
             .and(with_sse($sse))
+            .and(with_memory($mem))
             .and_then(self::handlers::openai_handler::send)
     };
 }

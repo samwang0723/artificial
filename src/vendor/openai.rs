@@ -16,7 +16,8 @@ You need to make sure all the code MUST wrapped inside
 ```
 #2 Did the answer meet the assignment? 
 #3 Review your answer and find problems within
-#4 Based on the problems you found, improve your answer"#;
+#4 Based on the problems you found, improve your answer
+"#;
 static API_KEY: Lazy<String> = Lazy::new(|| std::env::var("OPENAI_API_KEY").unwrap());
 
 #[derive(Debug, Serialize)]
@@ -82,7 +83,8 @@ impl<'a> Default for OpenAI<'a> {
 }
 
 impl OpenAI<'_> {
-    fn payload(&self, msg: Arc<String>, _context: Option<String>) -> serde_json::Value {
+    fn payload(&self, msg: Arc<String>, context: Option<String>) -> serde_json::Value {
+        let mem = format!("{}{}", PROMPT, context.unwrap_or_default());
         let messages = MessagesWrapper {
             stream: self.stream_enabled,
             temperature: 0.0,
@@ -94,7 +96,7 @@ impl OpenAI<'_> {
             messages: vec![
                 Message {
                     role: "system",
-                    content: PROMPT,
+                    content: mem.as_str(),
                 },
                 Message {
                     role: "user",
@@ -106,8 +108,12 @@ impl OpenAI<'_> {
         json!(&messages)
     }
 
-    pub fn create_request(&self, msg: Arc<String>) -> reqwest::RequestBuilder {
-        let json_payload = self.payload(msg, None);
+    pub fn create_request(
+        &self,
+        msg: Arc<String>,
+        context: Option<String>,
+    ) -> reqwest::RequestBuilder {
+        let json_payload = self.payload(msg, context);
         self.client
             .post("https://api.openai.com/v1/chat/completions")
             .header("Authorization", format!("Bearer {}", self.api_key))
