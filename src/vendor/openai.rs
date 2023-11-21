@@ -4,17 +4,21 @@ use serde_json::json;
 use std::sync::Arc;
 use std::time::Duration;
 
+const ROLE_SYSTEM: &str = "system";
+const ROLE_ASSISTANT: &str = "assistant";
+const ROLE_USER: &str = "user";
+
 static MODEL: &str = "gpt-4-1106-preview";
 static MAX_TOKENS: i32 = 1024 * 4;
 static STOP_SIGN: &str = "stop";
-static PROMPT: &str = r#"#1 You are a professional Coding AI assistant can 
-answer technicial questions based on context given. Analysis questions step by 
+static PROMPT: &str = r#"#1 You are a professional Coding AI assistant can
+answer technicial questions based on context given. Analysis questions step by
 step and being very clear & precise on the problems and solutions.
 You need to make sure all the code MUST wrapped inside
 ```(code-language)
 (code)
 ```
-#2 Did the answer meet the assignment? 
+#2 Did the answer meet the assignment?
 #3 Review your answer and find problems within
 #4 Based on the problems you found, improve your answer
 "#;
@@ -68,6 +72,12 @@ pub struct OpenAI<'a> {
     client: reqwest::Client,
 }
 
+impl<'a> Message<'a> {
+    fn new(role: &'a str, content: &'a str) -> Self {
+        Message { role, content }
+    }
+}
+
 impl<'a> Default for OpenAI<'a> {
     fn default() -> Self {
         OpenAI {
@@ -84,7 +94,17 @@ impl<'a> Default for OpenAI<'a> {
 
 impl OpenAI<'_> {
     fn payload(&self, msg: Arc<String>, context: Option<String>) -> serde_json::Value {
-        let mem = format!("{}{}", PROMPT, context.unwrap_or_default());
+        let ctx = context
+            .as_deref()
+            .map(|ctx_message| {
+                if !ctx_message.is_empty() {
+                    Message::new(ROLE_ASSISTANT, ctx_message)
+                } else {
+                    Message::new(ROLE_SYSTEM, PROMPT)
+                }
+            })
+            .unwrap_or_else(|| Message::new(ROLE_SYSTEM, PROMPT));
+
         let messages = MessagesWrapper {
             stream: self.stream_enabled,
             temperature: 0.0,
@@ -94,12 +114,9 @@ impl OpenAI<'_> {
             frequency_penalty: 0,
             presence_penalty: 0,
             messages: vec![
+                ctx,
                 Message {
-                    role: "system",
-                    content: mem.as_str(),
-                },
-                Message {
-                    role: "user",
+                    role: ROLE_USER,
                     content: msg.as_str(),
                 },
             ],

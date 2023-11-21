@@ -1,60 +1,58 @@
-use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
+use dashmap::DashMap;
 use std::sync::Arc;
-use tokio::sync::Mutex;
 use warp::Filter;
 
 use super::queue::FixedSizeQueue;
 
-pub type Memory = Arc<Mutex<MemoryEmitter>>;
+pub type Memory = Arc<MemoryEmitter>;
 
 pub struct MemoryEmitter {
-    inner: HashMap<String, FixedSizeQueue<String>>,
+    inner: DashMap<String, FixedSizeQueue<String>>,
 }
 
 impl MemoryEmitter {
     pub fn new() -> Self {
         MemoryEmitter {
-            inner: HashMap::new(),
+            inner: DashMap::new(),
         }
     }
 
     /// Combine strings in queue from a uuid
-    pub fn get(&self, uuid: Arc<String>) -> String {
-        match self.inner.get(uuid.as_str()) {
-            Some(mem_store) => mem_store.compose(),
-            None => String::new(),
-        }
+    pub fn get(&self, uuid: &str) -> String {
+        self.inner
+            .get(uuid)
+            .map_or_else(String::new, |mem_store| mem_store.compose())
     }
 
-    fn insert(&mut self, uuid: Arc<String>, reply: Arc<String>) {
-        let uuid = uuid.to_string();
-        // if hashmap key not found, create new fixed size queue
-        if !self.inner.contains_key(uuid.as_str()) {
-            self.inner.insert(uuid.clone(), FixedSizeQueue::new(3));
-        }
+    pub fn insert(&self, uuid: Arc<String>, reply: Arc<String>) {
+        // Attempt to unwrap the Arc<String> for uuid
+        let uuid = match Arc::try_unwrap(uuid) {
+            Ok(uuid) => uuid,
+            Err(arc) => {
+                // Handle the case where the Arc cannot be unwrapped
+                // For example, you can clone the inner String
+                // Note: Cloning the String here, since we can't take ownership
+                Arc::as_ref(&arc).clone()
+            }
+        };
 
-        let mem_store = self.inner.get_mut(uuid.as_str()).unwrap();
-        mem_store.handle_incoming(reply.to_string());
-    }
-}
-
-impl Deref for MemoryEmitter {
-    type Target = HashMap<String, FixedSizeQueue<String>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.inner
-    }
-}
-
-impl DerefMut for MemoryEmitter {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
+        // Attempt to unwrap the Arc<String> for reply
+        let reply = match Arc::try_unwrap(reply) {
+            Ok(reply) => reply,
+            Err(arc) => {
+                // Handle the case where the Arc cannot be unwrapped
+                // For example, you can clone the inner String
+                // Note: Cloning the String here, since we can't take ownership
+                Arc::as_ref(&arc).clone()
+            }
+        };
+        let mut entry = self.inner.entry(uuid).or_insert(FixedSizeQueue::new(3));
+        entry.handle_incoming(reply);
     }
 }
 
 pub fn create_memory() -> Memory {
-    Arc::new(Mutex::new(MemoryEmitter::new()))
+    Arc::new(MemoryEmitter::new())
 }
 
 pub fn with_memory(
@@ -64,11 +62,9 @@ pub fn with_memory(
 }
 
 pub async fn record(mem: Memory, uuid: Arc<String>, message: Arc<String>) {
-    let mut m = mem.lock().await;
-    m.insert(uuid, message);
+    mem.insert(uuid, message);
 }
 
 pub async fn get_memory(mem: Memory, uuid: Arc<String>) -> String {
-    let m = mem.lock().await;
-    m.get(uuid)
+    mem.get(&uuid)
 }
