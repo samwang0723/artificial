@@ -55,17 +55,32 @@ async fn openai_send(
     request: OpenAiRequest,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let memory = get_memory(mem.clone(), request.uuid.clone()).await;
+    let history = if request.message.starts_with("tool:") {
+        Arc::new(format!("{}[[stop]]", request.message))
+    } else {
+        Arc::new(format!("user:{}[[stop]]", request.message))
+    };
+    record(mem.clone(), request.uuid.clone(), history).await;
+
     let openai_request =
         API_CLIENT.create_request(request.uuid.clone(), request.message, Some(memory));
     let mut es = EventSource::new(openai_request).expect("Failed to create EventSource");
     while let Some(event) = es.next().await {
         match event {
             Ok(Event::Open) => println!("Connection Open!"),
-            Ok(Event::Message(message)) => match API_CLIENT.process(&message.data) {
+            Ok(Event::Message(message)) => match API_CLIENT.process(&message.data).await {
                 Ok(MessageAction::SendBody(body)) => {
                     let b_clone = body.clone();
                     publish(sse.clone(), request.uuid.clone(), Message::Reply(b_clone)).await;
                     record(mem.clone(), request.uuid.clone(), body).await;
+                }
+                Ok(MessageAction::SendFunc(body)) => {
+                    es.close();
+                    let forward = OpenAiRequestIntermediate {
+                        uuid: request.uuid.clone().to_string(),
+                        message: format!("tool:{}", body),
+                    };
+                    let _ = send(forward, sse.clone(), mem.clone()).await;
                 }
                 Ok(MessageAction::Stop) => {
                     publish(
