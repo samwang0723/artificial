@@ -9,8 +9,26 @@ pre[class*="language-"] {
     padding: 0;
 }
 
+:root {
+    --background-color: #ffffff; /* Light mode background */
+    --text-color: #000000; /* Light mode text */
+    --alternate-background-color: #e8e9eb; /* Light mode alternate background */
+    /* Define other colors as needed */
+}
+
+.dark-mode {
+    --background-color: #121212; /* Dark mode background */
+    --text-color: #ffffff; /* Dark mode text */
+    --alternate-background-color: #242424; /* Dark mode alternate background */
+    /* Override other colors as needed */
+    /* Set text field color to light yellow */
+    --text-field-color: #f4eabb;
+}
+
 html,
 body {
+    background-color: var(--background-color);
+    color: var(--text-color);
     height: 100%;
 }
 
@@ -49,7 +67,7 @@ body {
 }
 
 .message-row:nth-child(even) {
-    background-color: #e8e9eb;
+    background-color: var(--alternate-background-color);
 }
 
 .message-sender {
@@ -136,6 +154,7 @@ body {
     overflow-y: auto;
     width: 100%;
     padding-right: 80px;
+    background-color: var(--text-field-color);
 }
 
 #button-submit {

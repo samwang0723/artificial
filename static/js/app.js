@@ -281,3 +281,11 @@ function removeAttachments(html) {
   }
   return html;
 }
+
+function toggleDarkMode() {
+  document.body.classList.toggle('dark-mode');
+}
+
+function toggleLightMode() {
+  document.body.classList.remove('dark-mode');
+}
