@@ -55,7 +55,8 @@ async fn openai_send(
     request: OpenAiRequest,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let memory = get_memory(mem.clone(), request.uuid.clone()).await;
-    let openai_request = API_CLIENT.create_request(request.message, Some(memory));
+    let openai_request =
+        API_CLIENT.create_request(request.uuid.clone(), request.message, Some(memory));
     let mut es = EventSource::new(openai_request).expect("Failed to create EventSource");
     while let Some(event) = es.next().await {
         match event {

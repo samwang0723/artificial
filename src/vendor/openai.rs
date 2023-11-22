@@ -40,6 +40,7 @@ struct MessagesWrapper<'a> {
     frequency_penalty: usize,
     presence_penalty: usize,
     messages: Vec<Message<'a>>,
+    user: &'a str,
 }
 
 #[derive(Debug, Deserialize)]
@@ -93,7 +94,12 @@ impl<'a> Default for OpenAI<'a> {
 }
 
 impl OpenAI<'_> {
-    fn payload(&self, msg: Arc<String>, context: Option<String>) -> serde_json::Value {
+    fn payload(
+        &self,
+        uuid: Arc<String>,
+        msg: Arc<String>,
+        context: Option<String>,
+    ) -> serde_json::Value {
         let ctx = context
             .as_deref()
             .map(|ctx_message| {
@@ -120,6 +126,7 @@ impl OpenAI<'_> {
                     content: msg.as_str(),
                 },
             ],
+            user: uuid.as_str(),
         };
 
         json!(&messages)
@@ -127,10 +134,11 @@ impl OpenAI<'_> {
 
     pub fn create_request(
         &self,
+        uuid: Arc<String>,
         msg: Arc<String>,
         context: Option<String>,
     ) -> reqwest::RequestBuilder {
-        let json_payload = self.payload(msg, context);
+        let json_payload = self.payload(uuid, msg, context);
         self.client
             .post("https://api.openai.com/v1/chat/completions")
             .header("Authorization", format!("Bearer {}", self.api_key))
