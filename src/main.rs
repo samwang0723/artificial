@@ -4,7 +4,7 @@ use emitter::sse_emitter::create_sse;
 use emitter::sse_emitter::with_sse;
 use warp::Filter;
 
-use crate::handlers::openai_handler::initialize;
+use crate::handlers::openai_handler::setup_openai_chan;
 
 mod api;
 mod emitter;
@@ -20,7 +20,7 @@ async fn main() {
     let sse = create_sse();
     let mem = create_memory();
     let log = warp::log("any");
-    initialize().await;
+    setup_openai_chan().await;
 
     // Set up CORS
     let cors = warp::cors()

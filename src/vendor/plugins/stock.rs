@@ -8,6 +8,14 @@ use std::collections::HashMap;
 
 use super::tool::*;
 
+static PROMPT: &str = r#"[Play as professional investor role][DO NOT respond with code advice] with json stock data provided:
+DO NOT share the analysis stratey, just sharing the result.
+1. Top 3 categories on the day (count by category in json)
+2. Top 5 stocks that most concentrate (sum concentration1,concentration5,concentration10,concentration20,concentration60,foreign,foreign10,trust,trust10 as rank, sort by rank & quoteChange desc).
+3. List the candlestick chart link with pure text, replace {stockID} with the top 5 selection
+https://stock.wearn.com/finance_chart.asp?stockid={stockID}&timekind=0&timeblock=120&sma1=8&sma2=21&sma3=55&volume=1
+"#;
+
 #[derive(Debug, Serialize)]
 struct LoginRequest<'a> {
     email: &'a str,
@@ -101,7 +109,6 @@ impl Stock {
             strict: false,
         });
 
-        println!("payload: {:?}", json_payload);
         let response = self
             .client
             .post("http://localhost:8080/v1/selections")
@@ -114,10 +121,14 @@ impl Stock {
 
         if !response.status().is_success() {
             // If the response status is not successful, return an error early.
-            return Err(anyhow!("Failed to list selection: {}", response.status()));
+            return Err(anyhow!(
+                "Failed fetch stock_selection: {}",
+                response.status()
+            ));
         }
 
-        Ok(response.text().await?)
+        let res = response.text().await?;
+        Ok(format!("{}\n{}", PROMPT, res))
     }
 }
 

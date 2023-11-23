@@ -33,34 +33,32 @@ pub async fn send(
     Ok(with_status(warp::reply(), StatusCode::OK))
 }
 
-pub async fn initialize() {
+pub async fn setup_openai_chan() {
     let (openai_tx, openai_rx) = mpsc::unbounded_channel();
     *OPENAI_CHANNEL.lock().unwrap() = Some(openai_tx);
     let _openai_task = tokio::spawn(async move {
-        openai_trigger(openai_rx).await;
+        listening_openai(openai_rx).await;
     });
 }
 
-async fn openai_trigger(mut rx: mpsc::UnboundedReceiver<(Sse, Memory, OpenAiRequest)>) {
+async fn listening_openai(mut rx: mpsc::UnboundedReceiver<(Sse, Memory, OpenAiRequest)>) {
     while let Some((sse, mem, request)) = rx.recv().await {
         tokio::spawn(async move {
-            let _ = openai_send(sse, mem, request).await;
+            let _ = request_to_openai(sse, mem, request).await;
         });
     }
 }
 
-async fn openai_send(
+async fn request_to_openai(
     sse: Sse,
     mem: Memory,
     request: OpenAiRequest,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let memory = get_memory(mem.clone(), request.uuid.clone()).await;
-    let history = if request.message.starts_with("tool:") {
-        Arc::new(format!("{}[[stop]]", request.message))
-    } else {
-        Arc::new(format!("user:{}[[stop]]", request.message))
+    if !request.message.starts_with("tool:") {
+        let history = Arc::new(format!("user:{}[[stop]]", request.message));
+        record(mem.clone(), request.uuid.clone(), history).await;
     };
-    record(mem.clone(), request.uuid.clone(), history).await;
 
     let openai_request =
         API_CLIENT.create_request(request.uuid.clone(), request.message, Some(memory));

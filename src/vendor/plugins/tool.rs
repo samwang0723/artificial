@@ -55,7 +55,6 @@ pub fn payload() -> Tools<'static> {
 }
 
 pub async fn dispatch(cmd: String) -> Result<String, anyhow::Error> {
-    println!("cmd: {}", cmd);
     let parts: Vec<&str> = cmd.splitn(2, ',').collect();
     if parts.len() != 2 {
         return Err(anyhow!("Invalid input format"));
@@ -68,7 +67,7 @@ pub async fn dispatch(cmd: String) -> Result<String, anyhow::Error> {
             if let Some(date) = json_value["date"].as_str() {
                 let mut stock = Stock::default();
                 let selection = stock.selection(date).await?;
-                Ok(format!("{{\"selection\":{}}}", selection))
+                Ok(selection)
             } else {
                 Err(anyhow!("Missing date"))
             }
