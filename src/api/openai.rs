@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::sync::Arc;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct OpenAiRequestIntermediate {
     pub uuid: String,
     pub message: String,

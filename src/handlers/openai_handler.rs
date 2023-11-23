@@ -33,38 +33,52 @@ pub async fn send(
     Ok(with_status(warp::reply(), StatusCode::OK))
 }
 
-pub async fn initialize() {
+pub async fn setup_openai_chan() {
     let (openai_tx, openai_rx) = mpsc::unbounded_channel();
     *OPENAI_CHANNEL.lock().unwrap() = Some(openai_tx);
     let _openai_task = tokio::spawn(async move {
-        openai_trigger(openai_rx).await;
+        listening_openai(openai_rx).await;
     });
 }
 
-async fn openai_trigger(mut rx: mpsc::UnboundedReceiver<(Sse, Memory, OpenAiRequest)>) {
+async fn listening_openai(mut rx: mpsc::UnboundedReceiver<(Sse, Memory, OpenAiRequest)>) {
     while let Some((sse, mem, request)) = rx.recv().await {
         tokio::spawn(async move {
-            let _ = openai_send(sse, mem, request).await;
+            let _ = request_to_openai(sse, mem, request).await;
         });
     }
 }
 
-async fn openai_send(
+async fn request_to_openai(
     sse: Sse,
     mem: Memory,
     request: OpenAiRequest,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let memory = get_memory(mem.clone(), request.uuid.clone()).await;
-    let openai_request = API_CLIENT.create_request(request.message, Some(memory));
+    if !request.message.starts_with("tool:") {
+        let history = Arc::new(format!("user:{}[[stop]]", request.message));
+        record(mem.clone(), request.uuid.clone(), history).await;
+    };
+
+    let openai_request =
+        API_CLIENT.create_request(request.uuid.clone(), request.message, Some(memory));
     let mut es = EventSource::new(openai_request).expect("Failed to create EventSource");
     while let Some(event) = es.next().await {
         match event {
             Ok(Event::Open) => println!("Connection Open!"),
-            Ok(Event::Message(message)) => match API_CLIENT.process(&message.data) {
+            Ok(Event::Message(message)) => match API_CLIENT.process(&message.data).await {
                 Ok(MessageAction::SendBody(body)) => {
                     let b_clone = body.clone();
                     publish(sse.clone(), request.uuid.clone(), Message::Reply(b_clone)).await;
                     record(mem.clone(), request.uuid.clone(), body).await;
+                }
+                Ok(MessageAction::SendFunc(body)) => {
+                    es.close();
+                    let forward = OpenAiRequestIntermediate {
+                        uuid: request.uuid.clone().to_string(),
+                        message: format!("tool:{}", body),
+                    };
+                    let _ = send(forward, sse.clone(), mem.clone()).await;
                 }
                 Ok(MessageAction::Stop) => {
                     publish(
