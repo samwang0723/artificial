@@ -199,6 +199,11 @@ function formatMessage(message, showImg) {
         language === '' ||
         language === 'html' ||
         language === 'rust' ||
+        language === 'python' ||
+        language === 'javascript' ||
+        language === 'css' ||
+        language === 'json' ||
+        language === 'jsx' ||
         language === 'markdown'
       ) {
         code = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
