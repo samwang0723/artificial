@@ -204,7 +204,9 @@ function formatMessage(message, showImg) {
         language === 'css' ||
         language === 'json' ||
         language === 'jsx' ||
-        language === 'markdown'
+        language === 'markdown' ||
+        language === 'typescript' ||
+        language === 'tsx'
       ) {
         code = code.replace(/</g, '&lt;').replace(/>/g, '&gt;');
       }

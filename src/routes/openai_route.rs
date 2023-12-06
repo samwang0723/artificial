@@ -8,7 +8,7 @@ fn path_prefix() -> BoxedFilter<()> {
 }
 
 pub fn send() -> BoxedFilter<(OpenAiRequestIntermediate,)> {
-    let body = warp::body::content_length_limit(4096).and(warp::body::json());
+    let body = warp::body::content_length_limit(8192).and(warp::body::json());
 
     warp::post()
         .and(path_prefix())
