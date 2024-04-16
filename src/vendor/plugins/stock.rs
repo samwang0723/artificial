@@ -12,7 +12,7 @@ static PROMPT: &str = r#"[Play as professional investor role][DO NOT respond wit
 DO NOT share the analysis stratey, just sharing the result.
 1. Top 3 categories on the day (count by category in json)
 2. Top 5 stocks that most concentrate (sum concentration1,concentration5,concentration10,concentration20,concentration60,foreign,foreign10,trust,trust10 as rank, sort by rank & quoteChange desc).
-3. List the candlestick chart link with pure text, replace {stockID} with the top 5 selection
+3. List the candlestick chart link with pure text, replace {stockID} with the top 5 selection with exact this url:
 https://stock.wearn.com/finance_chart.asp?stockid={stockID}&timekind=0&timeblock=120&sma1=8&sma2=21&sma3=55&volume=1
 "#;
 
@@ -65,7 +65,7 @@ impl Stock {
 
         let response = self
             .client
-            .post("http://localhost:8080/v1/login")
+            .post("https://api.jarvis-stock.tw/v1/login")
             .header("Content-Type", "application/json")
             .timeout(self.default_timeout)
             .json(&json_payload)
@@ -111,7 +111,7 @@ impl Stock {
 
         let response = self
             .client
-            .post("http://localhost:8080/v1/selections")
+            .post("https://api.jarvis-stock.tw/v1/selections")
             .header("Authorization", format!("Bearer {}", self.access_token))
             .header("Content-Type", "application/json")
             .timeout(self.default_timeout)

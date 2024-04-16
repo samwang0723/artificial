@@ -175,6 +175,7 @@ function addMessageRow(sender) {
 }
 
 function extractImageUrls(text) {
+  console.log(text);
   const matches = text.match(
     /href=["'][^"']*?\.(png|jpe?g|gif|pdf|asp)(?:\?[^"']*)?["']/g
   );
