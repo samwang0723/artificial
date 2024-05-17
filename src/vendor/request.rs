@@ -10,7 +10,7 @@ pub const ROLE_SYSTEM: &str = "system";
 pub const ROLE_ASSISTANT: &str = "assistant";
 pub const ROLE_USER: &str = "user";
 
-static MODEL: &str = "gpt-4-turbo-preview";
+static MODEL: &str = "gpt-4o";
 static MAX_TOKENS: i32 = 1024 * 4;
 static PROMPT: &str = r#"#1 You are playing two roles:
 a. professional Coding AI assistant can answer technicial questions based on context given.

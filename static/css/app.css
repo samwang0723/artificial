@@ -171,39 +171,24 @@ code {
     bottom: 10px;
 }
 
-.image-upload {
-  width: 32px;
-  height: 32px;
-  background-size: cover;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  margin-right: 10px;
-  background-image: url('https://cdn.jsdelivr.net/gh/samwang0723/project-allison@main/project_allison/static/upload-to-cloud.svg');
-  background-color: white;
-  display: flex;
-  justify-content: center;
-}
-
-.image-upload-container {
-  display: flex;
-  align-items: center;
-}
-
-.thumbnails {
-  display: flex;
-  flex-wrap: wrap;
-  width: 100%;
+#thumbnailContainer {
+    position: relative;
+    display: inline-block;
+    margin-top: 20px;
 }
 
 .thumbnail {
-    width: 80px;
-    height: 80px;
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-position: center;
-    display: inline-block;
-    margin: 5px;
-    border-radius: 5px;
-    background-color: #f4eabb;
+    width: 150px;
+    height: auto;
+}
+
+.delete-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: red;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
 }
