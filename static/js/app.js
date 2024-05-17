@@ -3,6 +3,7 @@
 
 let activeDiv = null;
 let currentMsg = '';
+let currentImage = '';
 let refreshBottom = true;
 
 $(document).ready(function () {
@@ -296,4 +297,68 @@ function toggleDarkMode() {
 
 function toggleLightMode() {
   document.body.classList.remove('dark-mode');
+}
+
+function uploadImageToImgur(file) {
+  const clientId = "507bd7729a21e71"; // Replace with your Imgur client ID
+  const formData = new FormData();
+  formData.append("image", file);
+
+  fetch("https://api.imgur.com/3/image", {
+    method: "POST",
+    headers: {
+      Authorization: "Client-ID " + clientId
+    },
+    body: formData
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        console.log("Image uploaded successfully:", data.data.link);
+        currentImage = data.data.link;
+        // You can now use the URL (data.data.link) as needed
+        const thumbnailContainer =
+          document.getElementById("thumbnailContainer");
+        thumbnailContainer.innerHTML = `
+          <img src="${addSToFilename(
+            data.data.link
+          )}" class="thumbnail" alt="Thumbnail">
+          <button class="delete-btn" onclick="removeImage()">X</button>
+      `;
+      } else {
+        console.error("Image upload failed:", data);
+      }
+    })
+    .catch((error) => {
+      console.error("Error uploading image:", error);
+    });
+}
+
+function removeImage() {
+  const thumbnailContainer =
+    document.getElementById('thumbnailContainer');
+  thumbnailContainer.innerHTML = '';
+  currentImage = '';
+}
+
+function addSToFilename(filename) {
+  // Find the last dot in the filename to separate the name and extension
+  const lastDotIndex = filename.lastIndexOf(".");
+
+  // If there's no dot, return the original filename
+  if (lastDotIndex === -1) {
+    return filename;
+  }
+
+  // Split the filename into name and extension
+  const name = filename.substring(0, lastDotIndex);
+  const extension = filename.substring(lastDotIndex);
+
+  // Add 's' to the name
+  const newName = name + "s";
+
+  // Reconstruct the filename
+  const newFilename = newName + extension;
+
+  return newFilename;
 }
