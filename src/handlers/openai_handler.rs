@@ -60,8 +60,12 @@ async fn request_to_openai(
         record(mem.clone(), request.uuid.clone(), history).await;
     };
 
-    let openai_request =
-        API_CLIENT.create_request(request.uuid.clone(), request.message, Some(memory));
+    let openai_request = API_CLIENT.create_request(
+        request.uuid.clone(),
+        request.message,
+        request.image,
+        Some(memory),
+    );
     let mut es = EventSource::new(openai_request).expect("Failed to create EventSource");
     while let Some(event) = es.next().await {
         match event {
@@ -77,6 +81,7 @@ async fn request_to_openai(
                     let forward = OpenAiRequestIntermediate {
                         uuid: request.uuid.clone().to_string(),
                         message: format!("tool:{}", body),
+                        image: None,
                     };
                     let _ = send(forward, sse.clone(), mem.clone()).await;
                 }

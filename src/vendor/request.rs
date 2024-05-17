@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
 use std::sync::Arc;
 
 use super::history::inject_histories;
@@ -88,11 +88,11 @@ pub struct FunctionCall {
 #[derive(Debug, Serialize)]
 pub struct Message<'a> {
     role: &'a str,
-    content: &'a str,
+    content: Value,
 }
 
 impl<'a> Message<'a> {
-    pub fn new(role: &'a str, content: &'a str) -> Self {
+    pub fn new(role: &'a str, content: Value) -> Self {
         Message { role, content }
     }
 }
@@ -100,6 +100,7 @@ impl<'a> Message<'a> {
 pub fn get_payload(
     uuid: Arc<String>,
     msg: Arc<String>,
+    image: Option<Arc<String>>,
     context: Option<String>,
 ) -> serde_json::Value {
     let mut messages = MessagesWrapper {
@@ -117,19 +118,36 @@ pub fn get_payload(
     };
 
     // Always start with a system prompt
-    messages.messages.push(Message::new(ROLE_SYSTEM, PROMPT));
+    messages
+        .messages
+        .push(Message::new(ROLE_SYSTEM, json!(PROMPT)));
 
     // Restore context history from previous conversation
     let context = context.unwrap_or_default();
     inject_histories(&mut messages, &context);
 
-    // Append user new message
-    messages.messages.push(Message {
-        role: ROLE_USER,
-        content: msg.as_str(),
-    });
+    // Construct the user message content
+    let mut user_content = vec![json!({
+        "type": "text",
+        "text": msg.as_str()
+    })];
 
-    // allow additional tool plugins
+    // If an image is provided, add it to the content
+    if let Some(image_url) = image {
+        user_content.push(json!({
+            "type": "image_url",
+            "image_url": {
+                "url": image_url.as_str()
+            }
+        }));
+    }
+
+    // Append user new message
+    messages
+        .messages
+        .push(Message::new(ROLE_USER, json!(user_content)));
+
+    // Allow additional tool plugins
     inject_tools(&mut messages);
 
     json!(&messages)

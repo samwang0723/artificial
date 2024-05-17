@@ -46,10 +46,14 @@
     <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
 
     <!-- Prism.js code block -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/samwang0723/artificial@main/static/css/prism.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/samwang0723/artificial@main/static/css/prism.css"
+    />
     <script src="https://cdn.jsdelivr.net/gh/samwang0723/artificial@main/static/js/prism.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/markdown-it/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.js"></script>
 
     <style>
       @font-face {
@@ -66,19 +70,44 @@
         font-style: normal;
       }
     </style>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/samwang0723/artificial@main/static/css/app.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/samwang0723/artificial@main/static/css/app.css"
+    />
   </head>
 
   <body>
     <div class="container">
       <div id="messages"></div>
       <div id="command-line">
-        <button class="btn btn-secondary btn-sm" id="btn-dark" onclick="toggleDarkMode()">Dark Mode</button>
-        <button class="btn btn-warning btn-sm" id="btn-light" onclick="toggleLightMode()">Light Mode</button>
+        <button
+          class="btn btn-secondary btn-sm"
+          id="btn-dark"
+          onclick="toggleDarkMode()"
+        >
+          Dark Mode
+        </button>
+        <button
+          class="btn btn-warning btn-sm"
+          id="btn-light"
+          onclick="toggleLightMode()"
+        >
+          Light Mode
+        </button>
       </div>
+      <div id="thumbnailContainer"></div>
       <div id="message-input">
         <form id="chat_form">
           <div class="message-input-group">
+            <input type="file" id="image-upload" style="display: none" />
+            <button
+              class="btn btn-secondary btn-sm"
+              type="button"
+              id="upload-button"
+              onclick="document.getElementById('image-upload').click();"
+            >
+              Upload Image
+            </button>
             <textarea
               rows="1"
               id="message-textfield"
@@ -110,5 +139,25 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/gh/samwang0723/artificial@main/static/js/app.min.js"></script>
+
+    <script>
+      document
+        .getElementById("image-upload")
+        .addEventListener("change", function (event) {
+          const file = event.target.files[0];
+          if (file) {
+            console.log("File selected:", file.name);
+            // You can add more logic here to handle the file upload, e.g., display a preview, upload to server, etc.
+            uploadImageToImgur(file);
+          }
+        });
+
+      document
+        .getElementById("upload-button")
+        .addEventListener("click", function () {
+          console.log("Upload button clicked");
+          // Additional logic when the button is clicked can be added here
+        });
+    </script>
   </body>
 </html>

@@ -63,7 +63,7 @@ $(document).ready(function () {
     }
 
     addMessageRow('user');
-    formatMessage(message, true);
+    formatMessage(message + '\n' + currentImage, true);
 
     var xhr = new XMLHttpRequest();
     xhr.open('POST', origin + '/api/v1/send', true);
@@ -327,8 +327,8 @@ function uploadImageToImgur(file) {
         const thumbnailContainer =
           document.getElementById('thumbnailContainer');
         thumbnailContainer.innerHTML = `
-          <img src="${addSToFilename(data.data.link)}" class='thumbnail' alt='Thumbnail'>
-          <button class='delete-btn' onclick='removeImage()'>X</button>
+          <img src="${parseThumbnail(data.data.link)}" class='thumbnail' alt='Thumbnail'>
+          <button class='delete-btn' onclick='removeImage()'> X </button>
       `;
       } else {
         console.error('Image upload failed:', data);
@@ -346,7 +346,7 @@ function removeImage() {
   currentImage = '';
 }
 
-function addSToFilename(filename) {
+function parseThumbnail(filename) {
   // Find the last dot in the filename to separate the name and extension
   const lastDotIndex = filename.lastIndexOf('.');
 
@@ -360,7 +360,7 @@ function addSToFilename(filename) {
   const extension = filename.substring(lastDotIndex);
 
   // Add 's' to the name
-  const newName = name + 's';
+  const newName = name + 'l';
 
   // Reconstruct the filename
   const newFilename = newName + extension;
