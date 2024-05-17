@@ -72,6 +72,13 @@ $(document).ready(function () {
       uuid: user_uuid,
       message: message
     };
+
+    // append image url if exists
+    if (currentImage !== '') {
+      data['image'] = currentImage;
+      removeImage();
+    }
+
     var jsonStr = JSON.stringify(data);
     xhr.send(jsonStr);
 
