@@ -175,12 +175,13 @@ code {
     position: relative;
     display: inline-block;
     margin-top: 10px;
-    width: 150px;
+    width: 100px;
 }
 
 .thumbnail {
-    width: 150px;
+    width: 100px;
     height: auto;
+    border-radius: 50%; /* Makes the image rounded */
 }
 
 .delete-btn {
@@ -190,6 +191,13 @@ code {
     background-color: red;
     color: white;
     border: none;
-    border-radius: 50%;
+    border-radius: 50%; /* Makes the button a circle */
+    width: 20px; /* Adjust the size of the button */
+    height: 20px; /* Adjust the size of the button */
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
+    font-size: 12px; /* Adjust the font size for the "X" */
+    line-height: 1; /* Ensures the "X" is centered */
 }
