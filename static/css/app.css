@@ -175,6 +175,7 @@ code {
     position: relative;
     display: inline-block;
     margin-top: 20px;
+    width: 150px;
 }
 
 .thumbnail {
