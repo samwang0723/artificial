@@ -45,8 +45,6 @@ impl OpenAI<'_> {
     ) -> reqwest::RequestBuilder {
         let json_payload = request::get_payload(uuid, msg, image, context);
 
-        println!("JSON Payload: {:?}", json_payload);
-
         self.client
             .post("https://api.openai.com/v1/chat/completions")
             .header("Authorization", format!("Bearer {}", self.api_key))

@@ -66,7 +66,7 @@ $(document).ready(function () {
     formatMessage(message + '\n' + currentImage, true);
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', origin + '/api/v1/send', true);
+    xhr.open('POST', origin + '/api/v1/send_claude', true);
     xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
     var data = {
       uuid: user_uuid,
