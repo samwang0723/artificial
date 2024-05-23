@@ -45,8 +45,7 @@ impl Claude<'_> {
     }
 
     pub async fn process(&self, message: &str) -> Result<MessageAction, anyhow::Error> {
-        let event_data: claude_request::EventData = serde_json::from_str(message)?;
-        let data = &event_data.data;
+        let data: claude_request::Data = serde_json::from_str(message)?;
 
         if let Some(reason) = &data.type_ {
             match reason.as_str() {

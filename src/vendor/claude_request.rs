@@ -17,12 +17,6 @@ pub struct MessagesWrapper<'a> {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct EventData {
-    pub event: String,
-    pub data: Data,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct Data {
     #[serde(rename = "type")]
     pub type_: Option<String>,
