@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{json, Value};
 use std::sync::Arc;
 
 // pub const ROLE_ASSISTANT: &str = "assistant";
@@ -34,11 +34,11 @@ pub struct Delta {
 #[derive(Debug, Serialize)]
 pub struct Message<'a> {
     role: &'a str,
-    content: &'a str,
+    content: Value,
 }
 
 impl<'a> Message<'a> {
-    pub fn new(role: &'a str, content: &'a str) -> Self {
+    pub fn new(role: &'a str, content: Value) -> Self {
         Message { role, content }
     }
 }
@@ -51,10 +51,16 @@ pub fn get_payload(msg: Arc<String>) -> serde_json::Value {
         messages: Vec::new(),
     };
 
+    // Construct the user message content
+    let user_content = vec![json!({
+        "type": "text",
+        "text": msg.as_str()
+    })];
+
     // Append user new message
     messages
         .messages
-        .push(Message::new(ROLE_USER, msg.as_str()));
+        .push(Message::new(ROLE_USER, json!(user_content)));
 
     json!(&messages)
 }
