@@ -32,8 +32,12 @@ impl<'a> Default for Claude<'a> {
 }
 
 impl Claude<'_> {
-    pub fn create_request(&self, msg: Arc<String>) -> reqwest::RequestBuilder {
-        let json_payload = claude_request::get_payload(msg);
+    pub fn create_request(
+        &self,
+        msg: Arc<String>,
+        context: Option<String>,
+    ) -> reqwest::RequestBuilder {
+        let json_payload = claude_request::get_payload(msg, context);
 
         self.client
             .post("https://api.anthropic.com/v1/messages")

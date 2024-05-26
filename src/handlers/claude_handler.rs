@@ -54,9 +54,13 @@ async fn request_to_claude(
     mem: Memory,
     request: ClaudeRequest,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let _memory = get_memory(mem.clone(), request.uuid.clone()).await;
+    let memory = get_memory(mem.clone(), request.uuid.clone()).await;
 
-    let claude_request = API_CLIENT.create_request(request.message);
+    // Record lastest user input message
+    let latest_input = Arc::new(format!("user:{}[[stop]]", request.message));
+    record(mem.clone(), request.uuid.clone(), latest_input).await;
+
+    let claude_request = API_CLIENT.create_request(request.message, Some(memory));
     let mut es = EventSource::new(claude_request).expect("Failed to create EventSource");
     while let Some(event) = es.next().await {
         match event {
