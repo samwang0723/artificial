@@ -60,10 +60,10 @@
         <option value="claude">Claude</option>
       </select>
       <button class="btn btn-secondary btn-sm" id="btn-dark" onclick="toggleDarkMode()">
-        Dark Mode
+        Dark
       </button>
       <button class="btn btn-warning btn-sm" id="btn-light" onclick="toggleLightMode()">
-        Light Mode
+        Light
       </button>
     </div>
     <div id="thumbnailContainer"></div>
@@ -71,7 +71,8 @@
       <form id="chat_form">
         <div class="message-input-group">
           <div class="image-upload-container">
-            <button id="upload-button" class="image-upload"></button>
+            <button id="upload-button" class="image-upload" type="button"
+              onclick="document.getElementById('image-upload').click();"></button>
             <input type="file" id="image-upload" accept="image/*" style="display: none;">
           </div>
           <textarea rows="1" id="message-textfield" class="form-control" placeholder="Input questions"></textarea>
