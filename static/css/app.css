@@ -15,6 +15,7 @@ pre[class*="language-"] {
   --text-color: #000000;
   /* Light mode text */
   --alternate-background-color: #e8e9eb;
+  --alternate-background-color-2: #fbe0bb;
   /* Light mode alternate background */
   /* Define other colors as needed */
 }
@@ -25,6 +26,7 @@ pre[class*="language-"] {
   --text-color: #ffffff;
   /* Dark mode text */
   --alternate-background-color: #242424;
+  --alternate-background-color-2: #54504f;
   /* Dark mode alternate background */
   /* Override other colors as needed */
   /* Set text field color to light yellow */
@@ -66,36 +68,71 @@ body {
   float: left;
   display: flex;
   justify-content: flex-start;
-  justify-content: space-around;
-  padding-top: 10px;
   padding-bottom: 10px;
   border-radius: 5px;
 }
 
-.message-row:nth-child(even) {
-  background-color: var(--alternate-background-color);
+.message-row-right {
+  text-align: right;
+  width: 100%;
+  float: left;
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 10px;
+  border-radius: 5px;
 }
 
 .message-sender {
   font-weight: bold;
-  margin-right: 10px;
+  margin-right: 3px;
   text-align: right;
-  width: 10%;
+  width: 5%;
   flex-direction: row;
   flex-wrap: nowrap;
 }
 
 .message-body {
   text-align: left;
-  width: 70%;
+  display: inline-block;
   flex-direction: row;
   flex-wrap: wrap;
   word-wrap: break-word;
   margin-left: 10px;
+  background-color: var(--alternate-background-color);
+  border-radius: 5px;
+  padding-top: 10px;
+  padding-left: 16px;
+  padding-right: 10px;
+  box-sizing: border-box;
+  /* Ensures padding and border are included in the element's total width and height */
+  max-width: 90%;
+  /* Prevents the element from exceeding the screen size */
+  width: auto;
+  /* Allows the element to adjust its width based on content */
+}
+
+.message-body-right {
+  text-align: right;
+  display: inline-block;
+  flex-direction: row;
+  flex-wrap: wrap;
+  word-wrap: break-word;
+  background-color: var(--alternate-background-color-2);
+  margin-left: 10px;
+  border-radius: 5px;
+  padding-top: 10px;
+  padding-left: 16px;
+  padding-right: 10px;
+  box-sizing: border-box;
+  /* Ensures padding and border are included in the element's total width and height */
+  max-width: 90%;
+  /* Prevents the element from exceeding the screen size */
+  width: auto;
+  /* Allows the element to adjust its width based on content */
 }
 
 .message-tail {
-  width: 10%;
+  width: 2%;
 }
 
 .span {
@@ -250,4 +287,19 @@ code {
 .vendor-select {
   margin-right: 5px;
   margin-left: 10px;
+}
+
+/* Hide scrollbar for all browsers */
+.element {
+  overflow: hidden;
+  /* Hide both horizontal and vertical scrollbars */
+  scrollbar-width: none;
+  /* Hide scrollbar for Firefox */
+  -ms-overflow-style: none;
+  /* Hide scrollbar for Internet Explorer and Edge */
+}
+
+.element::-webkit-scrollbar {
+  display: none;
+  /* Hide scrollbar for Chrome, Safari and Opera */
 }

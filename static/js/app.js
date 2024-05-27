@@ -50,7 +50,6 @@ $(document).ready(function() {
   });
 
   sse.addEventListener('system', function(msg) {
-    console.log('system: ' + msg.data);
     user_uuid = msg.data;
   });
 
@@ -165,20 +164,28 @@ function boldify(inputText) {
 
 function addMessageRow(sender) {
   let messageRow = document.createElement('div');
-  messageRow.classList.add('message-row');
+  if (sender === 'user') {
+    messageRow.classList.add('message-row-right');
 
-  let messageSender = document.createElement('span');
-  messageSender.classList.add('message-sender');
-  messageSender.innerHTML =
-    '<img width="50px" height="50px" src="https://cdn.jsdelivr.net/gh/samwang0723/project-allison@main/project_allison/static/' +
-    sender +
-    '.svg">';
-  messageRow.appendChild(messageSender);
+    let messageText = document.createElement('span');
+    messageText.classList.add('message-body-right');
+    activeDiv = messageText;
+    messageRow.appendChild(messageText);
+  } else {
+    messageRow.classList.add('message-row');
+    let messageSender = document.createElement('span');
+    messageSender.classList.add('message-sender');
+    messageSender.innerHTML =
+      '<img width="30px" height="30px" src="https://cdn.jsdelivr.net/gh/samwang0723/project-allison@main/project_allison/static/' +
+      sender +
+      '.svg">';
+    messageRow.appendChild(messageSender);
 
-  let messageText = document.createElement('span');
-  messageText.classList.add('message-body');
-  activeDiv = messageText;
-  messageRow.appendChild(messageText);
+    let messageText = document.createElement('span');
+    messageText.classList.add('message-body');
+    activeDiv = messageText;
+    messageRow.appendChild(messageText);
+  }
 
   let messageTail = document.createElement('span');
   messageTail.classList.add('message-tail');
@@ -189,7 +196,6 @@ function addMessageRow(sender) {
 }
 
 function extractImageUrls(text) {
-  console.log(text);
   const matches = text.match(
     /href=["'][^"']*?\.(png|jpe?g|gif|pdf|asp)(?:\?[^"']*)?["']/g
   );
