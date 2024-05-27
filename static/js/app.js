@@ -100,7 +100,7 @@ $(document).ready(function() {
   });
   messageInput.oninput = function() {
     messageInput.style.height = '52px';
-    messageInput.style.height = Math.min(messageInput.scrollHeight, 400) + 'px';
+    messageInput.style.height = Math.min(messageInput.scrollHeight, 280) + 'px';
   };
 
   const messages = document.getElementById('messages');

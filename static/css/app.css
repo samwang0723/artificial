@@ -160,6 +160,9 @@ body {
   overflow-y: auto;
   width: 100%;
   padding-right: 80px;
+  padding-left: 60px;
+  padding-top: 12px;
+  padding-bottom: 12px;
   background-color: var(--text-field-color);
 }
 
@@ -218,6 +221,7 @@ code {
   width: 32px;
   height: 32px;
   background-size: cover;
+  background-color: transparent;
   border: none;
   outline: none;
   cursor: pointer;
@@ -226,7 +230,24 @@ code {
   justify-content: center;
 }
 
+.image-upload-2 {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background-size: cover;
+  background-color: transparent;
+  margin-top: 5px;
+  width: 24px;
+  height: 24px;
+}
+
 .image-upload-container {
-  display: flex;
-  align-items: center;
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+}
+
+.vendor-select {
+  margin-right: 5px;
+  margin-left: 10px;
 }

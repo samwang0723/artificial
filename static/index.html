@@ -55,7 +55,7 @@
   <div class="container">
     <div id="messages"></div>
     <div id="command-line">
-      <select id="vendorSelect">
+      <select id="vendorSelect" class="vendor-select">
         <option value="openai">Openai</option>
         <option value="claude">Claude</option>
       </select>
@@ -70,14 +70,7 @@
     <div id="message-input">
       <form id="chat_form">
         <div class="message-input-group">
-          <div class="image-upload-container">
-            <button id="upload-button" class="image-upload" type="button"
-              onclick="document.getElementById('image-upload').click();">
-              <img width="32px" height="32px"
-                src="https://cdn.jsdelivr.net/gh/samwang0723/artificial@main/static/paperclip.svg">
-            </button>
-            <input type="file" id="image-upload" accept="image/*" style="display: none;">
-          </div>
+
           <textarea rows="1" id="message-textfield" class="form-control" placeholder="Input questions"></textarea>
           <div class="input-group-prepend">
             <div id="loading" style="display: none">
@@ -90,12 +83,21 @@
               Send
             </button>
           </div>
+
+          <div class="image-upload-container">
+            <button id="upload-button" class="image-upload" type="button"
+              onclick="document.getElementById('image-upload').click();">
+              <img class="image-upload-2" width="32px" height="32px"
+                src="https://cdn.jsdelivr.net/gh/samwang0723/artificial@main/static/paperclip.svg">
+            </button>
+            <input type="file" id="image-upload" accept="image/*" style="display: none;">
+          </div>
         </div>
       </form>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/gh/samwang0723/artificial@main/static/js/app.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/samwang0723/artificial@main/static/js/app.js"></script>
 
   <script>
     document
