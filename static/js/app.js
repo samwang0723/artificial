@@ -5,14 +5,15 @@ let activeDiv = null;
 let currentMsg = '';
 let currentImage = '';
 let refreshBottom = true;
+let currentVendor = 'openai';
 
-$(document).ready(function () {
+$(document).ready(function() {
   var origin = window.location.origin;
   var uri = origin + '/api/v1/sse';
   var sse = new EventSource(uri);
   var user_uuid;
 
-  sse.onopen = function () {
+  sse.onopen = function() {
     console.log('Connected to the server.');
 
     activeDiv = null;
@@ -20,12 +21,12 @@ $(document).ready(function () {
     stopLoading();
   };
 
-  sse.onerror = function () {
+  sse.onerror = function() {
     console.log('Error connecting to the server.');
     stopLoading();
   };
 
-  sse.addEventListener('user', function (msg) {
+  sse.addEventListener('user', function(msg) {
     var obj = JSON.parse(msg.data);
     var data = obj.message;
 
@@ -48,12 +49,12 @@ $(document).ready(function () {
     formatMessage(currentMsg, false);
   });
 
-  sse.addEventListener('system', function (msg) {
+  sse.addEventListener('system', function(msg) {
     console.log('system: ' + msg.data);
     user_uuid = msg.data;
   });
 
-  $('#chat_form').on('submit', function (e) {
+  $('#chat_form').on('submit', function(e) {
     startLoading();
 
     e.preventDefault();
@@ -66,7 +67,7 @@ $(document).ready(function () {
     formatMessage(message + '\n' + currentImage, true);
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', origin + '/api/v1/send_claude', true);
+    xhr.open('POST', origin + '/api/v1/send/' + currentVendor, true);
     xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
     var data = {
       uuid: user_uuid,
@@ -90,20 +91,20 @@ $(document).ready(function () {
   });
 
   const messageInput = document.getElementById('message-textfield');
-  messageInput.addEventListener('keydown', function (event) {
+  messageInput.addEventListener('keydown', function(event) {
     if (event.key === 'Enter' && event.shiftKey) {
       event.preventDefault();
       const value = this.value;
       this.value = value + '\n';
     }
   });
-  messageInput.oninput = function () {
+  messageInput.oninput = function() {
     messageInput.style.height = '52px';
     messageInput.style.height = Math.min(messageInput.scrollHeight, 400) + 'px';
   };
 
   const messages = document.getElementById('messages');
-  messages.addEventListener('scroll', function () {
+  messages.addEventListener('scroll', function() {
     // Check if the user just scrolled
     if (
       messages.scrollTop + messages.clientHeight >=
@@ -115,6 +116,11 @@ $(document).ready(function () {
       // User scrolled, but not to the bottom, do something else
       refreshBottom = false;
     }
+  });
+
+  const vendorSelect = document.getElementById('vendorSelect');
+  vendorSelect.addEventListener('change', function() {
+    currentVendor = vendorSelect.value;
   });
 });
 
@@ -279,7 +285,7 @@ function formatMessage(message, showImg) {
 
   if (showImg && images.length > 0) {
     var elements = document.getElementsByClassName('thumbnail');
-    var imageClick = function () {
+    var imageClick = function() {
       const link = this.getAttribute('data-src');
       window.open(link, '_blank');
     };

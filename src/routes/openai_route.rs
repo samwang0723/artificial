@@ -4,7 +4,7 @@ use warp::{path, Filter};
 use crate::api::openai::OpenAiRequestIntermediate;
 
 fn path_prefix() -> BoxedFilter<()> {
-    path!("api" / "v1" / "send" / ..).boxed()
+    path!("api" / "v1" / "send" / "openai" / ..).boxed()
 }
 
 pub fn send() -> BoxedFilter<(OpenAiRequestIntermediate,)> {

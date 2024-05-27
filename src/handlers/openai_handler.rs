@@ -10,11 +10,12 @@ use warp::reply::with_status;
 use crate::api::openai::OpenAiRequest;
 use crate::api::openai::OpenAiRequestIntermediate;
 use crate::api::sse::Message;
-use crate::emitter::memory_emitter::{get_memory, record, Memory};
-use crate::emitter::sse_emitter::{publish, Sse};
+use crate::emitter::*;
 use crate::vendor::openai::{MessageAction, OpenAI};
 
-type OpenAIChan = Lazy<Mutex<Option<mpsc::UnboundedSender<(Sse, Memory, OpenAiRequest)>>>>;
+type OpenAIChan = Lazy<
+    Mutex<Option<mpsc::UnboundedSender<(sse_emitter::Sse, memory_emitter::Memory, OpenAiRequest)>>>,
+>;
 
 static API_CLIENT: Lazy<OpenAI> = Lazy::new(OpenAI::default);
 static OPENAI_CHANNEL: OpenAIChan = Lazy::new(|| Mutex::new(None));
@@ -22,8 +23,8 @@ static STOP_SIGN: Lazy<Arc<String>> = Lazy::new(|| Arc::new(String::from("[[stop
 
 pub async fn send(
     request: OpenAiRequestIntermediate,
-    sse: Sse,
-    mem: Memory,
+    sse: sse_emitter::Sse,
+    mem: memory_emitter::Memory,
 ) -> Result<impl warp::Reply, warp::Rejection> {
     if let Some(openai_tx) = OPENAI_CHANNEL.lock().unwrap().as_ref() {
         let request: OpenAiRequest = request.into();
@@ -41,7 +42,9 @@ pub async fn setup_openai_chan() {
     });
 }
 
-async fn listening_openai(mut rx: mpsc::UnboundedReceiver<(Sse, Memory, OpenAiRequest)>) {
+async fn listening_openai(
+    mut rx: mpsc::UnboundedReceiver<(sse_emitter::Sse, memory_emitter::Memory, OpenAiRequest)>,
+) {
     while let Some((sse, mem, request)) = rx.recv().await {
         tokio::spawn(async move {
             let _ = request_to_openai(sse, mem, request).await;
@@ -50,14 +53,14 @@ async fn listening_openai(mut rx: mpsc::UnboundedReceiver<(Sse, Memory, OpenAiRe
 }
 
 async fn request_to_openai(
-    sse: Sse,
-    mem: Memory,
+    sse: sse_emitter::Sse,
+    mem: memory_emitter::Memory,
     request: OpenAiRequest,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let memory = get_memory(mem.clone(), request.uuid.clone()).await;
+    let memory = memory_emitter::get_memory(mem.clone(), request.uuid.clone()).await;
     if !request.message.starts_with("tool:") {
         let history = Arc::new(format!("user:{}[[stop]]", request.message));
-        record(mem.clone(), request.uuid.clone(), history).await;
+        memory_emitter::record(mem.clone(), request.uuid.clone(), history).await;
     };
 
     let openai_request = API_CLIENT.create_request(
@@ -73,8 +76,13 @@ async fn request_to_openai(
             Ok(Event::Message(message)) => match API_CLIENT.process(&message.data).await {
                 Ok(MessageAction::SendBody(body)) => {
                     let b_clone = body.clone();
-                    publish(sse.clone(), request.uuid.clone(), Message::Reply(b_clone)).await;
-                    record(mem.clone(), request.uuid.clone(), body).await;
+                    sse_emitter::publish(
+                        sse.clone(),
+                        request.uuid.clone(),
+                        Message::Reply(b_clone),
+                    )
+                    .await;
+                    memory_emitter::record(mem.clone(), request.uuid.clone(), body).await;
                 }
                 Ok(MessageAction::SendFunc(body)) => {
                     es.close();
@@ -86,13 +94,14 @@ async fn request_to_openai(
                     let _ = send(forward, sse.clone(), mem.clone()).await;
                 }
                 Ok(MessageAction::Stop) => {
-                    publish(
+                    sse_emitter::publish(
                         sse.clone(),
                         request.uuid.clone(),
                         Message::Reply(STOP_SIGN.clone()),
                     )
                     .await;
-                    record(mem.clone(), request.uuid.clone(), STOP_SIGN.clone()).await;
+                    memory_emitter::record(mem.clone(), request.uuid.clone(), STOP_SIGN.clone())
+                        .await;
                     es.close()
                 }
                 Ok(MessageAction::NoAction) => (),
@@ -100,13 +109,13 @@ async fn request_to_openai(
             },
             Err(err) => {
                 println!("Error: {}", err);
-                publish(
+                sse_emitter::publish(
                     sse.clone(),
                     request.uuid.clone(),
                     Message::Reply(STOP_SIGN.clone()),
                 )
                 .await;
-                record(mem.clone(), request.uuid.clone(), STOP_SIGN.clone()).await;
+                memory_emitter::record(mem.clone(), request.uuid.clone(), STOP_SIGN.clone()).await;
                 es.close();
                 return Err(Box::new(err));
             }

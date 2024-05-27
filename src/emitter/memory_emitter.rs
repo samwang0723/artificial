@@ -46,7 +46,7 @@ impl MemoryEmitter {
                 Arc::as_ref(&arc).clone()
             }
         };
-        let mut entry = self.inner.entry(uuid).or_insert(FixedSizeQueue::new(6));
+        let mut entry = self.inner.entry(uuid).or_insert(FixedSizeQueue::new(4));
         entry.handle_incoming(reply);
     }
 }
