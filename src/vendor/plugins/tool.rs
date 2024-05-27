@@ -1,10 +1,12 @@
 use anyhow::{anyhow, Result};
+use dashmap::DashMap;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_json::Value;
 use std::collections::HashMap;
 
 use super::{stock, stock::Stock};
+use crate::vendor::requests;
 
 // Define the top-level structure that holds an array of tools
 #[derive(Serialize, Deserialize, Debug)]
@@ -74,4 +76,29 @@ pub async fn dispatch(cmd: String) -> Result<String, anyhow::Error> {
         }
         _ => Err(anyhow!("Invalid function name")),
     }
+}
+
+pub fn append_fragment(
+    calls: &DashMap<String, String>,
+    id: &String,
+    tool_calls: &[requests::openai::ToolCall],
+) {
+    if tool_calls.is_empty() {
+        return;
+    }
+    let call_ref = &tool_calls[0];
+    let function_name = call_ref.function.name.clone().unwrap_or_default();
+    let arguments = &call_ref.function.arguments;
+
+    // Insert or update the entry in the DashMap
+    let _ = calls
+        .entry(id.to_string())
+        .and_modify(|e| {
+            // If the entry exists, append the arguments
+            e.push_str(arguments);
+        })
+        .or_insert_with(|| {
+            // If the entry does not exist, create it with the function name and arguments
+            format!("{},{}", function_name, arguments)
+        });
 }

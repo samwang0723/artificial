@@ -1,104 +1,110 @@
 pre[class*="language-"] {
-    font-family: 'SauceCodePro';
-    font-size: 14px !important;
+  font-family: 'SauceCodePro';
+  font-size: 14px !important;
 }
 
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 :root {
-    --background-color: #ffffff; /* Light mode background */
-    --text-color: #000000; /* Light mode text */
-    --alternate-background-color: #e8e9eb; /* Light mode alternate background */
-    /* Define other colors as needed */
+  --background-color: #ffffff;
+  /* Light mode background */
+  --text-color: #000000;
+  /* Light mode text */
+  --alternate-background-color: #e8e9eb;
+  /* Light mode alternate background */
+  /* Define other colors as needed */
 }
 
 .dark-mode {
-    --background-color: #121212; /* Dark mode background */
-    --text-color: #ffffff; /* Dark mode text */
-    --alternate-background-color: #242424; /* Dark mode alternate background */
-    /* Override other colors as needed */
-    /* Set text field color to light yellow */
-    --text-field-color: #f4eabb;
+  --background-color: #121212;
+  /* Dark mode background */
+  --text-color: #ffffff;
+  /* Dark mode text */
+  --alternate-background-color: #242424;
+  /* Dark mode alternate background */
+  /* Override other colors as needed */
+  /* Set text field color to light yellow */
+  --text-field-color: #f4eabb;
 }
 
 html,
 body {
-    background-color: var(--background-color);
-    color: var(--text-color);
-    height: 100%;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  height: 100%;
 }
 
 body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 14px;
-    font-family: 'SauceCodePro';
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 14px;
+  font-family: 'SauceCodePro';
 }
 
 .container {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-    width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
 }
 
 #messages {
-    flex: 1;
-    overflow-y: scroll;
-    padding: 10px;
+  flex: 1;
+  overflow-y: scroll;
+  padding: 10px;
 }
 
 .message-row {
-    text-align: left;
-    width: 100%;
-    float: left;
-    display: flex;
-    justify-content: flex-start;
-    justify-content: space-around;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    border-radius: 5px;
+  text-align: left;
+  width: 100%;
+  float: left;
+  display: flex;
+  justify-content: flex-start;
+  justify-content: space-around;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  border-radius: 5px;
 }
 
 .message-row:nth-child(even) {
-    background-color: var(--alternate-background-color);
+  background-color: var(--alternate-background-color);
 }
 
 .message-sender {
-    font-weight: bold;
-    margin-right: 10px;
-    text-align: right;
-    width: 10%;
-    flex-direction: row;
-    flex-wrap: nowrap;
+  font-weight: bold;
+  margin-right: 10px;
+  text-align: right;
+  width: 10%;
+  flex-direction: row;
+  flex-wrap: nowrap;
 }
 
 .message-body {
-    text-align: left;
-    width: 70%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    word-wrap: break-word;
-    margin-left: 10px;
+  text-align: left;
+  width: 70%;
+  flex-direction: row;
+  flex-wrap: wrap;
+  word-wrap: break-word;
+  margin-left: 10px;
 }
 
 .message-tail {
-    width: 10%;
+  width: 10%;
 }
 
 .span {
-    font-size: 14px;
-    padding: 10px;
+  font-size: 14px;
+  padding: 10px;
 }
 
 .code-toolbar {
-    width: 100%;
+  width: 100%;
 }
 
 #command-line {
@@ -112,92 +118,117 @@ body {
 }
 
 #message-input {
-    display: flex;
-    justify-content: center;
-    align-items: flex-end;
-    /* Align to the bottom */
-    height: auto;
-    min-height: 60px;
-    max-height: 40%;
-    width: 100%;
-    /* Adjust this value to limit the height of the message-input div */
-    padding: 10px;
-    margin-bottom: 20px;
-    position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  /* Align to the bottom */
+  height: auto;
+  min-height: 60px;
+  max-height: 40%;
+  width: 100%;
+  /* Adjust this value to limit the height of the message-input div */
+  padding: 10px;
+  margin-bottom: 20px;
+  position: relative;
 }
 
 #chat_form {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  position: relative;
 }
 
 .message-input-group {
-    display: flex;
-    width: 100%;
-    position: relative;
+  display: flex;
+  width: 100%;
+  position: relative;
 }
 
 .form-control {
-    flex: 1;
-    height: 52px;
-    position: relative;
+  flex: 1;
+  height: 52px;
+  position: relative;
 }
 
 #message-textfield {
-    font-family: 'SauceCodePro';
-    resize: none;
-    max-height: 400px;
-    /* 1.5em is the default line height, 4px for padding, 2px for border */
-    overflow-y: auto;
-    width: 100%;
-    padding-right: 80px;
-    background-color: var(--text-field-color);
+  font-family: 'SauceCodePro';
+  resize: none;
+  max-height: 400px;
+  /* 1.5em is the default line height, 4px for padding, 2px for border */
+  overflow-y: auto;
+  width: 100%;
+  padding-right: 80px;
+  background-color: var(--text-field-color);
 }
 
 #button-submit {
-    font-family: 'SauceCodePro';
+  font-family: 'SauceCodePro';
 }
 
 code {
-    font-family: 'SauceCodePro';
+  font-family: 'SauceCodePro';
 }
 
 .input-group-prepend {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
 }
 
 #thumbnailContainer {
-    position: relative;
-    display: inline-block;
-    margin-top: 10px;
-    width: 100px;
+  position: relative;
+  display: inline-block;
+  margin-top: 10px;
+  width: 100px;
 }
 
 .thumbnail {
-    width: 100px;
-    height: auto;
-    border-radius: 50%; /* Makes the image rounded */
+  width: 100px;
+  height: auto;
+  border-radius: 5px;
+  /* Makes the image rounded */
 }
 
 .delete-btn {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background-color: red;
-    color: white;
-    border: none;
-    border-radius: 50%; /* Makes the button a circle */
-    width: 20px; /* Adjust the size of the button */
-    height: 20px; /* Adjust the size of the button */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 12px; /* Adjust the font size for the "X" */
-    line-height: 1; /* Ensures the "X" is centered */
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: red;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  /* Makes the button a circle */
+  width: 20px;
+  /* Adjust the size of the button */
+  height: 20px;
+  /* Adjust the size of the button */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  /* Adjust the font size for the "X" */
+  line-height: 1;
+  /* Ensures the "X" is centered */
+}
+
+.image-upload {
+  width: 32px;
+  height: 32px;
+  background-size: cover;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  margin-right: 10px;
+  background-image: url('https://cdn.jsdelivr.net/gh/samwang0723/project-allison@main/project_allison/static/upload-to-cloud.svg');
+  background-color: white;
+  display: flex;
+  justify-content: center;
+}
+
+.image-upload-container {
+  display: flex;
+  align-items: center;
 }

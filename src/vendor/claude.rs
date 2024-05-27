@@ -3,7 +3,7 @@ use once_cell::sync::Lazy;
 use std::sync::Arc;
 use std::time::Duration;
 
-use super::*;
+use super::requests::*;
 
 static API_KEY: Lazy<String> = Lazy::new(|| std::env::var("CLAUDE_API_KEY").unwrap());
 
@@ -37,7 +37,7 @@ impl Claude<'_> {
         msg: Arc<String>,
         context: Option<String>,
     ) -> reqwest::RequestBuilder {
-        let json_payload = claude_request::get_payload(msg, context);
+        let json_payload = claude::get_payload(msg, context);
 
         self.client
             .post("https://api.anthropic.com/v1/messages")
@@ -49,7 +49,7 @@ impl Claude<'_> {
     }
 
     pub async fn process(&self, message: &str) -> Result<MessageAction, anyhow::Error> {
-        let data: claude_request::Data = serde_json::from_str(message)?;
+        let data: claude::Data = serde_json::from_str(message)?;
 
         if let Some(reason) = &data.type_ {
             match reason.as_str() {

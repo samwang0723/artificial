@@ -43,7 +43,7 @@ impl OpenAI<'_> {
         image: Option<Arc<String>>,
         context: Option<String>,
     ) -> reqwest::RequestBuilder {
-        let json_payload = request::get_payload(uuid, msg, image, context);
+        let json_payload = requests::openai::get_payload(uuid, msg, image, context);
 
         self.client
             .post("https://api.openai.com/v1/chat/completions")
@@ -54,7 +54,7 @@ impl OpenAI<'_> {
     }
 
     pub async fn process(&self, message: &str) -> Result<MessageAction, anyhow::Error> {
-        let event_data: request::EventData = serde_json::from_str(message)?;
+        let event_data: requests::openai::EventData = serde_json::from_str(message)?;
         let choice = &event_data.choices[0];
         let id = &event_data.id;
         match &choice.finish_reason {
@@ -76,7 +76,7 @@ impl OpenAI<'_> {
                 (_, Some(tool_calls)) => {
                     // Handle the case where tool_calls exists
                     // Assuming you have a way to process tool_calls and create a MessageAction
-                    tool::append_fragment(&self.function_calls, id, tool_calls);
+                    plugins::tool::append_fragment(&self.function_calls, id, tool_calls);
                     Ok(MessageAction::NoAction)
                 }
                 (None, None) => Ok(MessageAction::NoAction),

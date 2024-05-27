@@ -1,14 +1,8 @@
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::json;
 use std::sync::Arc;
 
-use super::history::inject_histories;
-use super::plugins::tool::Tool;
-use super::tool::inject_tools;
-
-pub const ROLE_SYSTEM: &str = "system";
-pub const ROLE_ASSISTANT: &str = "assistant";
-pub const ROLE_USER: &str = "user";
+use crate::vendor::message::*;
 
 static MODEL: &str = "gpt-4o";
 static MAX_TOKENS: i32 = 1024 * 4;
@@ -26,35 +20,6 @@ means the stronger the stock may perform. when response, don't show the strategy
 #3 Review your answer and find problems within
 #4 Based on the problems you found, improve your answer
 "#;
-
-#[derive(Debug, Serialize)]
-pub struct MessagesWrapper<'a> {
-    stream: bool,
-    temperature: f32,
-    max_tokens: i32,
-    model: &'a str,
-    top_p: f32,
-    frequency_penalty: usize,
-    presence_penalty: usize,
-    messages: Vec<Message<'a>>,
-    user: &'a str,
-    tool_choice: Option<&'a str>,
-    tools: Option<Vec<Tool<'a>>>,
-}
-
-impl<'a> MessagesWrapper<'a> {
-    pub fn set_tool_choice(&mut self, choice: &'a str) {
-        self.tool_choice = Some(choice);
-    }
-
-    pub fn set_tools(&mut self, tools: Vec<Tool<'a>>) {
-        self.tools = Some(tools);
-    }
-
-    pub fn set_histories(&mut self, memories: Vec<Message<'a>>) {
-        self.messages.extend(memories);
-    }
-}
 
 #[derive(Debug, Deserialize)]
 pub struct EventData {
@@ -85,18 +50,6 @@ pub struct FunctionCall {
     pub arguments: String,
 }
 
-#[derive(Debug, Serialize)]
-pub struct Message<'a> {
-    role: &'a str,
-    content: Value,
-}
-
-impl<'a> Message<'a> {
-    pub fn new(role: &'a str, content: Value) -> Self {
-        Message { role, content }
-    }
-}
-
 pub fn get_payload(
     uuid: Arc<String>,
     msg: Arc<String>,
@@ -105,14 +58,14 @@ pub fn get_payload(
 ) -> serde_json::Value {
     let mut messages = MessagesWrapper {
         stream: true,
-        temperature: 0.0,
+        temperature: Some(0.0),
         max_tokens: MAX_TOKENS,
         model: MODEL,
-        top_p: 0.1,
-        frequency_penalty: 0,
-        presence_penalty: 0,
+        top_p: Some(0.1),
+        frequency_penalty: Some(0),
+        presence_penalty: Some(0),
         messages: Vec::new(),
-        user: uuid.as_str(),
+        user: Some(uuid.as_str()),
         tools: None,
         tool_choice: None,
     };
@@ -124,7 +77,7 @@ pub fn get_payload(
 
     // Restore context history from previous conversation
     let context = context.unwrap_or_default();
-    inject_histories(&mut messages, &context);
+    messages.inject_histories(&context);
 
     // Construct the user message content
     let mut user_content = vec![json!({
@@ -148,7 +101,7 @@ pub fn get_payload(
         .push(Message::new(ROLE_USER, json!(user_content)));
 
     // Allow additional tool plugins
-    inject_tools(&mut messages);
+    messages.inject_tools();
 
     json!(&messages)
 }

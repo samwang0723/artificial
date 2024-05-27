@@ -4,7 +4,7 @@ use warp::{path, Filter};
 use crate::api::claude::ClaudeRequestIntermediate;
 
 fn path_prefix() -> BoxedFilter<()> {
-    path!("api" / "v1" / "send_claude" / ..).boxed()
+    path!("api" / "v1" / "send" / "claude" / ..).boxed()
 }
 
 pub fn send() -> BoxedFilter<(ClaudeRequestIntermediate,)> {
