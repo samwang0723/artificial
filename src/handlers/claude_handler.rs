@@ -60,8 +60,8 @@ async fn request_to_claude(
     let memory = memory_emitter::get_memory(mem.clone(), request.uuid.clone()).await;
 
     // Record lastest user input message
-    let latest_input = Arc::new(format!("user:{}[[stop]]", request.message));
-    memory_emitter::record(mem.clone(), request.uuid.clone(), latest_input).await;
+    let new_input = Arc::new(format!("user:{}[[stop]]", request.message));
+    memory_emitter::record(mem.clone(), request.uuid.clone(), new_input).await;
 
     let claude_request = API_CLIENT.create_request(request.message, Some(memory));
     let mut es = EventSource::new(claude_request).expect("Failed to create EventSource");

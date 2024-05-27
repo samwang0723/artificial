@@ -18,6 +18,7 @@ impl<T> FixedSizeQueue<T> {
     pub fn push(&mut self, item: T) {
         if self.deque.len() == self.capacity {
             self.deque.pop_front(); // Remove the oldest item if we're at capacity
+            self.deque.pop_front(); // Remove the 2nd oldest item
         }
         self.deque.push_back(item);
     }

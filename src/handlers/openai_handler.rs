@@ -59,8 +59,8 @@ async fn request_to_openai(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let memory = memory_emitter::get_memory(mem.clone(), request.uuid.clone()).await;
     if !request.message.starts_with("tool:") {
-        let history = Arc::new(format!("user:{}[[stop]]", request.message));
-        memory_emitter::record(mem.clone(), request.uuid.clone(), history).await;
+        let new_input = Arc::new(format!("user:{}[[stop]]", request.message));
+        memory_emitter::record(mem.clone(), request.uuid.clone(), new_input).await;
     };
 
     let openai_request = API_CLIENT.create_request(
