@@ -222,8 +222,6 @@ code {
   outline: none;
   cursor: pointer;
   margin-right: 10px;
-  background-image: url('https://cdn.jsdelivr.net/gh/samwang0723/project-allison@main/project_allison/static/upload-to-cloud.svg');
-  background-color: white;
   display: flex;
   justify-content: center;
 }
