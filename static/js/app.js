@@ -85,7 +85,7 @@ $(document).ready(function() {
 
     // reset the input field and cache values
     $('#message-textfield').val('');
-    $('#message-textfield').height(40);
+    $('#message-textfield').height(26);
     activeDiv = null;
     currentMsg = '';
   });
