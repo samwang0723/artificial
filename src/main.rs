@@ -40,5 +40,5 @@ async fn main() {
         .or(sse!(sse));
     let api = api.with(cors).with(log);
 
-    warp::serve(api).run(([0, 0, 0, 0], 80)).await;
+    warp::serve(api).run(([0, 0, 0, 0], 3000)).await;
 }

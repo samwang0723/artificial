@@ -6,8 +6,36 @@ let currentMsg = '';
 let currentImage = '';
 let refreshBottom = true;
 let currentVendor = 'openai';
+let hasIndexDB = false;
 
 $(document).ready(function() {
+
+  if (!window.indexedDB) {
+    console.log('Your browser does not support a stable version of IndexedDB. Some features will not be available.');
+  } else {
+    console.log('IndexedDB is supported.');
+
+    const request = indexedDB.open('artifical-chat', 1);
+
+    request.onupgradeneeded = function(event) {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains('messages')) {
+        db.createObjectStore('messages', { keyPath: 'id', autoIncrement: true });
+      }
+    };
+
+    request.onerror = function(event) {
+      console.error('Database error: ', event.target.errorCode);
+    };
+
+    request.onsuccess = function(event) {
+      hasIndexDB = true;
+      console.log('Database opened successfully');
+
+      loadMessages(displayHistoricalMessages);
+    };
+  }
+
   var origin = window.location.origin;
   var uri = origin + '/api/v1/sse';
   var sse = new EventSource(uri);
@@ -35,6 +63,7 @@ $(document).ready(function() {
       if (currentMsg !== '') {
         formatMessage(currentMsg, true);
       }
+      storeMessage('allison', currentMsg);
 
       activeDiv = null;
       currentMsg = '';
@@ -73,11 +102,16 @@ $(document).ready(function() {
       message: message
     };
 
+    let storedMessage = message;
+
     // append image url if exists
     if (currentImage !== '') {
       data['image'] = currentImage;
       removeImage();
+
+      storedMessage += '\n' + currentImage;
     }
+    storeMessage('user', storedMessage);
 
     var jsonStr = JSON.stringify(data);
     xhr.send(jsonStr);
@@ -378,4 +412,104 @@ function parseThumbnail(filename) {
   const newFilename = newName + extension;
 
   return newFilename;
+}
+
+function storeMessage(owner, message) {
+  if (!hasIndexDB) {
+    return;
+  }
+  const request = indexedDB.open('artifical-chat', 1);
+
+  request.onsuccess = function(event) {
+    const db = event.target.result;
+    const transaction = db.transaction(['messages'], 'readwrite');
+    const objectStore = transaction.objectStore('messages');
+    const addRequest = objectStore.add({ owner: owner, content: message, timestamp: new Date() });
+
+    addRequest.onsuccess = function(event) {
+      console.log('Message stored successfully');
+    };
+
+    addRequest.onerror = function(event) {
+      console.error('Error storing message: ', event.target.errorCode);
+    };
+  };
+
+  request.onerror = function(event) {
+    console.error('Database error: ', event.target.errorCode);
+  };
+}
+
+
+function loadMessages(callback) {
+  if (!hasIndexDB) {
+    return;
+  }
+
+  const request = indexedDB.open('artifical-chat', 1);
+
+  request.onsuccess = function(event) {
+    const db = event.target.result;
+    const transaction = db.transaction(['messages'], 'readonly');
+    const objectStore = transaction.objectStore('messages');
+    const messages = [];
+
+    objectStore.openCursor().onsuccess = function(event) {
+      const cursor = event.target.result;
+      if (cursor) {
+        messages.push(cursor.value);
+        cursor.continue();
+      } else {
+        callback(messages);
+      }
+    };
+
+    objectStore.openCursor().onerror = function(event) {
+      console.error('Error loading messages: ', event.target.errorCode);
+    };
+  };
+
+  request.onerror = function(event) {
+    console.error('Database error: ', event.target.errorCode);
+  };
+}
+
+// Callback function to print out messages
+function displayHistoricalMessages(messages) {
+  messages.forEach(function(message) {
+    addMessageRow(message.owner);
+    formatMessage(message.content, true);
+  });
+}
+
+function resetMessagesObjectStore(dbName = 'artifical-chat', storeName = 'messages') {
+  if (!hasIndexDB) {
+    return;
+  }
+  return new Promise((resolve, reject) => {
+    const openRequest = indexedDB.open(dbName);
+
+    openRequest.onerror = function(event) {
+      console.error('Error opening database:', event.target.error);
+      reject('Error opening database');
+    };
+
+    openRequest.onsuccess = function(event) {
+      const db = event.target.result;
+      const transaction = db.transaction([storeName], 'readwrite');
+      const objectStore = transaction.objectStore(storeName);
+
+      const clearRequest = objectStore.clear();
+
+      clearRequest.onerror = function(event) {
+        console.error('Error clearing object store:', event.target.error);
+        reject('Error clearing object store');
+      };
+
+      clearRequest.onsuccess = function() {
+        console.log('Object store cleared successfully');
+        resolve('Object store cleared successfully');
+      };
+    };
+  });
 }
