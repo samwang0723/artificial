@@ -269,6 +269,9 @@ function formatMessage(message, showImg) {
       var code_class = 'language-';
       if (language != '') {
         code_class = 'language-' + language;
+        if (language === 'typescript') {
+          code_class = 'language-javascript';
+        }
       }
       output +=
         '<pre class="prettyprint line-numbers language-markup">' +
