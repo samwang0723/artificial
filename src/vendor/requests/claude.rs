@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::vendor::message::*;
 
-static MODEL: &str = "claude-3-opus-20240229";
+static MODEL: &str = "claude-3-5-sonnet-20240620";
 static MAX_TOKENS: i32 = 1024 * 4;
 
 #[derive(Debug, Deserialize)]
