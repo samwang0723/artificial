@@ -54,28 +54,34 @@ $(document).ready(function() {
     stopLoading();
   };
 
+  let debounceTimer;
+  const DEBOUNCE_DELAY = 100; // Adjust the delay as needed
+
   sse.addEventListener('user', function(msg) {
-    var obj = JSON.parse(msg.data);
-    var data = obj.message;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      var obj = JSON.parse(msg.data);
+      var data = obj.message;
 
-    // If the message is "[[stop]]", reset the activeDiv
-    if (data === '[[stop]]') {
-      if (currentMsg !== '') {
-        formatMessage(currentMsg, true);
+      // If the message is "[[stop]]", reset the activeDiv
+      if (data === '[[stop]]') {
+        if (currentMsg !== '') {
+          formatMessage(currentMsg, true);
+        }
+        storeMessage('allison', currentMsg);
+
+        activeDiv = null;
+        currentMsg = '';
+        stopLoading();
+        return;
       }
-      storeMessage('allison', currentMsg);
 
-      activeDiv = null;
-      currentMsg = '';
-      stopLoading();
-      return;
-    }
-
-    currentMsg += data;
-    if (!activeDiv) {
-      addMessageRow('allison');
-    }
-    formatMessage(currentMsg, false);
+      currentMsg += data;
+      if (!activeDiv) {
+        addMessageRow('allison');
+      }
+      formatMessage(currentMsg, false);
+    }, DEBOUNCE_DELAY);
   });
 
   sse.addEventListener('system', function(msg) {

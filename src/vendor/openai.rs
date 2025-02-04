@@ -45,10 +45,14 @@ impl OpenAI<'_> {
     ) -> reqwest::RequestBuilder {
         let json_payload = requests::openai::get_payload(uuid, msg, image, context);
 
+        // Print the payload for debugging in json format
+        println!("{}", serde_json::to_string_pretty(&json_payload).unwrap());
+
         self.client
             .post("https://api.openai.com/v1/chat/completions")
             .header("Authorization", format!("Bearer {}", self.api_key))
-            .header("Content-Type", "application/json")
+            .header("content-type", "application/json")
+            .header("Accept", "application/json")
             .timeout(self.default_timeout)
             .json(&json_payload)
     }

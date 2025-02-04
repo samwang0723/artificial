@@ -36,19 +36,18 @@ impl<'a> Message<'a> {
 #[derive(Debug, Serialize)]
 pub struct MessagesWrapper<'a> {
     pub stream: bool,
-    pub max_tokens: i32,
-    pub model: &'a str,
-    pub messages: Vec<Message<'a>>,
-
     #[serde(skip_serializing_if = "Option::is_none")]
     pub temperature: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i32>,
+    pub model: &'a str,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub top_p: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub frequency_penalty: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub presence_penalty: Option<usize>,
-
+    pub messages: Vec<Message<'a>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user: Option<&'a str>,
     #[serde(skip_serializing_if = "Option::is_none")]

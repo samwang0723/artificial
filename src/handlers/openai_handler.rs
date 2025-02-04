@@ -108,7 +108,9 @@ async fn request_to_openai(
                 Err(err) => println!("Error parsing message: {}", err),
             },
             Err(err) => {
-                println!("Error: {}", err);
+                eprintln!("Error: {:?}", err);
+                eprintln!("Error Description: {}", err);
+
                 sse_emitter::publish(
                     sse.clone(),
                     request.uuid.clone(),

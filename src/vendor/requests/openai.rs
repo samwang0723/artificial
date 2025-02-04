@@ -1,10 +1,11 @@
+use base64::{engine::general_purpose, Engine as _};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::sync::Arc;
+use std::{fmt, sync::Arc};
 
 use crate::vendor::message::*;
 
-static MODEL: &str = "gpt-4o";
+static MODEL: &str = "o3-mini-2025-01-31";
 static MAX_TOKENS: i32 = 1024 * 4;
 static PROMPT: &str = r#"#1 You are playing two roles:
 a. professional Coding AI assistant can answer technicial questions based on context given.
@@ -58,22 +59,25 @@ pub fn get_payload(
 ) -> serde_json::Value {
     let mut messages = MessagesWrapper {
         stream: true,
-        temperature: Some(0.0),
-        max_tokens: MAX_TOKENS,
         model: MODEL,
-        top_p: Some(0.1),
-        frequency_penalty: Some(0),
-        presence_penalty: Some(0),
         messages: Vec::new(),
         user: Some(uuid.as_str()),
+        max_tokens: None,
+        temperature: None,
+        top_p: None,
+        frequency_penalty: None,
+        presence_penalty: None,
         tools: None,
         tool_choice: None,
     };
 
     // Always start with a system prompt
-    messages
-        .messages
-        .push(Message::new(ROLE_SYSTEM, json!(PROMPT)));
+    if MODEL != "o3-mini-2025-01-31" {
+        messages.max_tokens = Some(MAX_TOKENS);
+        messages
+            .messages
+            .push(Message::new(ROLE_SYSTEM, json!(PROMPT)));
+    }
 
     // Restore context history from previous conversation
     let context = context.unwrap_or_default();
@@ -86,13 +90,16 @@ pub fn get_payload(
     })];
 
     // If an image is provided, add it to the content
-    if let Some(image_url) = image {
-        user_content.push(json!({
+    if MODEL != "o3-mini-2025-01-31" {
+        if let Some(image_url) = image {
+            user_content.push(json!({
             "type": "image_url",
             "image_url": {
-                "url": image_url.as_str()
+                // need to add prefix data:image/png;base64,{base64 encode url}
+                "url": fmt::format(format_args!("data:image/png;base64,{}", general_purpose::STANDARD.encode(image_url.as_str())))
             }
         }));
+        }
     }
 
     // Append user new message
@@ -101,7 +108,9 @@ pub fn get_payload(
         .push(Message::new(ROLE_USER, json!(user_content)));
 
     // Allow additional tool plugins
-    messages.inject_tools();
+    if MODEL != "o3-mini-2025-01-31" {
+        messages.inject_tools();
+    }
 
     json!(&messages)
 }

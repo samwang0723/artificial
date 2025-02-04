@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use crate::vendor::message::*;
 
-static MODEL: &str = "claude-3-5-sonnet-20240620";
+static MODEL: &str = "claude-3-5-sonnet-latest";
 static MAX_TOKENS: i32 = 1024 * 4;
 
 #[derive(Debug, Deserialize)]
@@ -14,6 +14,7 @@ pub struct Data {
     pub delta: Option<Delta>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct Delta {
     #[serde(rename = "type")]
@@ -25,7 +26,7 @@ pub struct Delta {
 pub fn get_payload(msg: Arc<String>, context: Option<String>) -> serde_json::Value {
     let mut messages = MessagesWrapper {
         stream: true,
-        max_tokens: MAX_TOKENS,
+        max_tokens: Some(MAX_TOKENS),
         model: MODEL,
         messages: Vec::new(),
         temperature: None,
