@@ -9,9 +9,10 @@ let currentVendor = 'openai';
 let hasIndexDB = false;
 
 $(document).ready(function() {
-
   if (!window.indexedDB) {
-    console.log('Your browser does not support a stable version of IndexedDB. Some features will not be available.');
+    console.log(
+      'Your browser does not support a stable version of IndexedDB. Some features will not be available.',
+    );
   } else {
     console.log('IndexedDB is supported.');
 
@@ -20,7 +21,10 @@ $(document).ready(function() {
     request.onupgradeneeded = function(event) {
       const db = event.target.result;
       if (!db.objectStoreNames.contains('messages')) {
-        db.createObjectStore('messages', { keyPath: 'id', autoIncrement: true });
+        db.createObjectStore('messages', {
+          keyPath: 'id',
+          autoIncrement: true,
+        });
       }
     };
 
@@ -105,7 +109,7 @@ $(document).ready(function() {
     xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
     var data = {
       uuid: user_uuid,
-      message: message
+      message: message,
     };
 
     let storedMessage = message;
@@ -203,6 +207,8 @@ function boldify(inputText) {
 }
 
 function addMessageRow(sender) {
+  // sleeptfor 100 ms
+  sleep(20);
   let messageRow = document.createElement('div');
   if (sender === 'user') {
     messageRow.classList.add('message-row-right');
@@ -237,7 +243,7 @@ function addMessageRow(sender) {
 
 function extractImageUrls(text) {
   const matches = text.match(
-    /href=["'][^"']*?\.(png|jpe?g|gif|pdf|asp)(?:\?[^"']*)?["']/g
+    /href=["'][^"']*?\.(png|jpe?g|gif|pdf|asp)(?:\?[^"']*)?["']/g,
   );
   if (!matches) {
     return [];
@@ -301,21 +307,21 @@ function formatMessage(message, showImg) {
     images = extractImageUrls(output);
     if (images.length > 0) {
       //max = images.length > 10 ? 10 : images.length;
-      var imageBlock = '<div class=\'thumbnails\'>';
+      var imageBlock = "<div class='thumbnails'>";
       for (let i = 0; i < images.length; i++) {
         const image = images[i];
         if (image.includes('.pdf')) {
           imageBlock +=
-            '<div class=\'thumbnail\' data-src=\'' +
+            "<div class='thumbnail' data-src='" +
             image +
-            '\' style=\'background-image:url(https://cdn.jsdelivr.net/gh/samwang0723/project-allison@main/project_allison/static/pdf.png)\'></div>';
+            "' style='background-image:url(https://cdn.jsdelivr.net/gh/samwang0723/project-allison@main/project_allison/static/pdf.png)'></div>";
         } else {
           imageBlock +=
-            '<div class=\'thumbnail\' data-src=\'' +
+            "<div class='thumbnail' data-src='" +
             image +
-            '\' style=\'background-image:url(' +
+            "' style='background-image:url(" +
             image +
-            ')\'></div>';
+            ")'></div>";
         }
       }
       imageBlock += '</div>';
@@ -346,7 +352,7 @@ function formatMessage(message, showImg) {
 
 function removeAttachments(html) {
   const start = html.indexOf('<em><strong>Attachments:</strong></em>');
-  const end = html.indexOf('<div class=\'thumbnails\'>', start);
+  const end = html.indexOf("<div class='thumbnails'>", start);
   if (start !== -1 && end !== -1) {
     return html.slice(0, start) + html.slice(end);
   }
@@ -369,9 +375,9 @@ function uploadImageToImgur(file) {
   fetch('https://api.imgur.com/3/image', {
     method: 'POST',
     headers: {
-      Authorization: 'Client-ID ' + clientId
+      Authorization: 'Client-ID ' + clientId,
     },
-    body: formData
+    body: formData,
   })
     .then((response) => response.json())
     .then((data) => {
@@ -395,8 +401,7 @@ function uploadImageToImgur(file) {
 }
 
 function removeImage() {
-  const thumbnailContainer =
-    document.getElementById('thumbnailContainer');
+  const thumbnailContainer = document.getElementById('thumbnailContainer');
   thumbnailContainer.innerHTML = '';
   currentImage = '';
 }
@@ -433,7 +438,11 @@ function storeMessage(owner, message) {
     const db = event.target.result;
     const transaction = db.transaction(['messages'], 'readwrite');
     const objectStore = transaction.objectStore('messages');
-    const addRequest = objectStore.add({ owner: owner, content: message, timestamp: new Date() });
+    const addRequest = objectStore.add({
+      owner: owner,
+      content: message,
+      timestamp: new Date(),
+    });
 
     addRequest.onsuccess = function(event) {
       console.log('Message stored successfully');
@@ -448,7 +457,6 @@ function storeMessage(owner, message) {
     console.error('Database error: ', event.target.errorCode);
   };
 }
-
 
 function loadMessages(callback) {
   if (!hasIndexDB) {
@@ -491,7 +499,10 @@ function displayHistoricalMessages(messages) {
   });
 }
 
-function resetMessagesObjectStore(dbName = 'artifical-chat', storeName = 'messages') {
+function resetMessagesObjectStore(
+  dbName = 'artifical-chat',
+  storeName = 'messages',
+) {
   if (!hasIndexDB) {
     return;
   }
