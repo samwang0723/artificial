@@ -62,7 +62,7 @@ pub fn get_payload(
                 "type": "image",
                 "source": {
                     "type": "base64",
-                    "media_type": "image/png",
+                    "media_type": get_media_type(image_url.as_str()),
                     "data": format!("{}", base64_image),
                 }
             }));
@@ -87,4 +87,21 @@ pub fn download_and_encode_image(url: &str) -> Result<Arc<String>> {
     let base64_image = general_purpose::STANDARD.encode(&image_bytes);
 
     Ok(Arc::new(base64_image))
+}
+
+/// Determines the media type from the image URL
+fn get_media_type(url: &str) -> &'static str {
+    let lowercase_url = url.to_lowercase();
+    if lowercase_url.ends_with(".png") {
+        "image/png"
+    } else if lowercase_url.ends_with(".jpg") || lowercase_url.ends_with(".jpeg") {
+        "image/jpeg"
+    } else if lowercase_url.ends_with(".gif") {
+        "image/gif"
+    } else if lowercase_url.ends_with(".webp") {
+        "image/webp"
+    } else {
+        // Default to png if unknown
+        "image/png"
+    }
 }
