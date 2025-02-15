@@ -207,8 +207,6 @@ function boldify(inputText) {
 }
 
 function addMessageRow(sender) {
-  // sleeptfor 100 ms
-  sleep(20);
   let messageRow = document.createElement('div');
   if (sender === 'user') {
     messageRow.classList.add('message-row-right');

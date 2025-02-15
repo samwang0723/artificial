@@ -35,9 +35,12 @@ impl Claude<'_> {
     pub fn create_request(
         &self,
         msg: Arc<String>,
+        image: Option<Arc<String>>,
         context: Option<String>,
     ) -> reqwest::RequestBuilder {
-        let json_payload = claude::get_payload(msg, context);
+        let json_payload = claude::get_payload(msg, image, context);
+
+        println!("{}", serde_json::to_string_pretty(&json_payload).unwrap());
 
         self.client
             .post("https://api.anthropic.com/v1/messages")

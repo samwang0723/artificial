@@ -5,7 +5,7 @@ use std::{fmt, sync::Arc};
 
 use crate::vendor::message::*;
 
-static MODEL: &str = "o3-mini-2025-01-31";
+static MODEL: &str = "o1-preview";
 static MAX_TOKENS: i32 = 1024 * 4;
 static PROMPT: &str = r#"#1 You are playing two roles:
 a. professional Coding AI assistant can answer technicial questions based on context given.
@@ -72,7 +72,7 @@ pub fn get_payload(
     };
 
     // Always start with a system prompt
-    if MODEL != "o3-mini-2025-01-31" {
+    if MODEL != "o1-preview" {
         messages.max_tokens = Some(MAX_TOKENS);
         messages
             .messages
@@ -90,7 +90,7 @@ pub fn get_payload(
     })];
 
     // If an image is provided, add it to the content
-    if MODEL != "o3-mini-2025-01-31" {
+    if MODEL != "o1-preview" {
         if let Some(image_url) = image {
             user_content.push(json!({
             "type": "image_url",
@@ -108,7 +108,7 @@ pub fn get_payload(
         .push(Message::new(ROLE_USER, json!(user_content)));
 
     // Allow additional tool plugins
-    if MODEL != "o3-mini-2025-01-31" {
+    if MODEL != "o1-preview" {
         messages.inject_tools();
     }
 

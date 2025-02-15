@@ -5,12 +5,14 @@ use std::sync::Arc;
 pub struct ClaudeRequestIntermediate {
     pub uuid: String,
     pub message: String,
+    pub image: Option<String>,
 }
 
 #[derive(Debug)]
 pub struct ClaudeRequest {
     pub uuid: Arc<String>,
     pub message: Arc<String>,
+    pub image: Option<Arc<String>>,
 }
 
 impl From<ClaudeRequestIntermediate> for ClaudeRequest {
@@ -18,6 +20,7 @@ impl From<ClaudeRequestIntermediate> for ClaudeRequest {
         ClaudeRequest {
             uuid: Arc::new(intermediate.uuid),
             message: Arc::new(intermediate.message),
+            image: intermediate.image.map(Arc::new),
         }
     }
 }

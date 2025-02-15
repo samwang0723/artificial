@@ -1,3 +1,6 @@
+use anyhow::Result;
+use base64::{engine::general_purpose, Engine as _};
+use reqwest;
 use serde::Deserialize;
 use serde_json::json;
 use std::sync::Arc;
@@ -23,7 +26,11 @@ pub struct Delta {
     pub partial_json: Option<String>,
 }
 
-pub fn get_payload(msg: Arc<String>, context: Option<String>) -> serde_json::Value {
+pub fn get_payload(
+    msg: Arc<String>,
+    image: Option<Arc<String>>,
+    context: Option<String>,
+) -> serde_json::Value {
     let mut messages = MessagesWrapper {
         stream: true,
         max_tokens: Some(MAX_TOKENS),
@@ -43,15 +50,41 @@ pub fn get_payload(msg: Arc<String>, context: Option<String>) -> serde_json::Val
     messages.inject_histories(&context);
 
     // Construct the user message content
-    let user_content = vec![json!({
+    let mut user_content = vec![json!({
         "type": "text",
         "text": msg.as_str()
     })];
 
-    // Append user new message
+    // If an image is provided, add it to the content
+    if let Some(image_url) = image {
+        if let Ok(base64_image) = download_and_encode_image(image_url.as_str()) {
+            user_content.push(json!({
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": format!("{}", base64_image),
+                }
+            }));
+        }
+    }
+
+    // Append user new messages
     messages
         .messages
         .push(Message::new(ROLE_USER, json!(user_content)));
 
     json!(&messages)
+}
+
+/// Downloads an image from a URL and converts it to base64
+pub fn download_and_encode_image(url: &str) -> Result<Arc<String>> {
+    // Download the image synchronously
+    let response = reqwest::blocking::get(url)?;
+    let image_bytes = response.bytes()?;
+
+    // Convert to base64
+    let base64_image = general_purpose::STANDARD.encode(&image_bytes);
+
+    Ok(Arc::new(base64_image))
 }
